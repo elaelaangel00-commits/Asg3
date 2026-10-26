@@ -1,33 +1,21 @@
-# Unity generated folders
-/[Ll]ibrary/
-/[Tt]emp/
-/[Oo]bj/
-/[Bb]uild/
-/[Bb]uilds/
-/[Ll]ogs/
-/[Uu]ser[Ss]ettings/
-/[Mm]emoryCaptures/
-/[Rr]ecordings/
+# Unity generated folders - ignore at any folder depth
+[Ll]ibrary/
+[Ll]ogs/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+[Rr]ecordings/
 
 # Visual Studio
 .vs/
 *.csproj
 *.sln
 *.suo
-*.user
 *.userprefs
 
 # Temporary files
 *.tmp
-*.log
 *.bak
-*.blend1
-
-# Unity build files
-*.apk
-*.aab
-*.unitypackage
-
-# Crash reports
-sysinfo.txt
-mono_crash.*
