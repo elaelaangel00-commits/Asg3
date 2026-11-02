@@ -5,12 +5,15 @@ public class Level5Manager : MonoBehaviour
 {
     public static Level5Manager Instance { get; private set; }
 
-    [SerializeField] private int totalAngels = 3;
-    [SerializeField] private Text progressText;
-    [SerializeField] private GameObject keyObject;       // starts hidden or in a locked box
-    [SerializeField] private GameObject gameOverPanel;
-    [SerializeField] private GameObject levelCompletePanel;
-    [SerializeField] private AudioSource unlockSound;
+    private int totalAngels = 3;
+
+    //UI & References 
+    private Text progressText;
+    private GameObject keyObject;
+    private GameObject gameOverPanel;
+    private GameObject levelCompletePanel;
+    private AudioSource unlockSound;
+
 
     private int lockedCount;
     private bool gameEnded;
@@ -23,8 +26,9 @@ public class Level5Manager : MonoBehaviour
 
     private void Start()
     {
-        keyObject.SetActive(false);
-        UpdateHUD();
+        if (keyObject != null) keyObject.SetActive(false);
+        if (gameOverPanel != null) gameOverPanel.SetActive(false);
+        if (levelCompletePanel != null) levelCompletePanel.SetActive(false);
     }
 
     public void RegisterLockedAngel()
@@ -38,12 +42,26 @@ public class Level5Manager : MonoBehaviour
             if (unlockSound != null) unlockSound.Play();
         }
     }
+    //Check if all angels are trapped
+    public bool IsAllAngelsSecured()
+    {
+        return lockedCount >= totalAngels;
+    }
 
     public void PlayerCaught()
     {
         if (gameEnded) return;
         gameEnded = true;
-        gameOverPanel.SetActive(true);
+
+        // This will print to your console safely without throwing errors
+        Debug.Log("GAME OVER: Player was caught by a Weeping Angel!");
+
+        // Only try to turn on the panel if you have actually assigned one
+        if (gameOverPanel != null)
+        {
+            gameOverPanel.SetActive(true);
+        }
+
         Time.timeScale = 0f;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
@@ -60,8 +78,11 @@ public class Level5Manager : MonoBehaviour
         Cursor.visible = true;
     }
 
+
+
     private void UpdateHUD()
     {
         progressText.text = $"Angels locked: {lockedCount}/{totalAngels}";
     }
 }
+

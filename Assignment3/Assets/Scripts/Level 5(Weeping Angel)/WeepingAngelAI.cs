@@ -20,44 +20,65 @@ public class WeepingAngelAI : MonoBehaviour
     {
         agent = GetComponent<NavMeshAgent>();
         playerCam = Camera.main;
-        player = GameObject.FindGameObjectWithTag("Player").transform;
+        //player = GameObject.FindGameObjectWithTag("Player").transform;
+        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+        if (playerObj != null) player = playerObj.transform;
         if (angelRenderer == null) angelRenderer = GetComponentInChildren<Renderer>();
     }
 
+
     private void Update()
     {
-        if (IsLocked) return;
+        if (IsLocked || player == null) return;
 
-        if (IsSeenByPlayer())
+        bool isSeen = IsSeenByPlayer();
+
+        if (isSeen)
         {
+            // FREEZE: Player is looking at it
             agent.isStopped = true;
             agent.velocity = Vector3.zero;
             if (moveSound != null && moveSound.isPlaying) moveSound.Stop();
         }
         else
         {
+            // CHASE: Player is not looking
             agent.isStopped = false;
             agent.SetDestination(player.position);
             if (moveSound != null && !moveSound.isPlaying) moveSound.Play();
 
-            if (Vector3.Distance(transform.position, player.position) <= catchDistance)
+            // ATTACK CHECK: Only attacks when very close AND not seen
+            float distanceToPlayer = Vector3.Distance(transform.position, player.position);
+
+            Debug.Log("Distance to player: " + distanceToPlayer);
+            if (distanceToPlayer <= catchDistance)
             {
+                Debug.Log("Distance to player: " + distanceToPlayer);
                 if (Level5Manager.Instance != null)
+                {
                     Level5Manager.Instance.PlayerCaught();
+                }
+                else
+                {
+                    Debug.LogError("Level5Manager.Instance is NULL!");
+                }
             }
         }
     }
 
-    // Seen = inside the camera's view AND nothing solid in between
+
+
     private bool IsSeenByPlayer()
     {
+        if (playerCam == null || angelRenderer == null) return false;
+
         GeometryUtility.CalculateFrustumPlanes(playerCam, frustumPlanes);
         if (!GeometryUtility.TestPlanesAABB(frustumPlanes, angelRenderer.bounds))
-            return false;                                  // outside the view
+            return false;                           // Outside the view
 
         Vector3 target = angelRenderer.bounds.center;
         if (Physics.Linecast(playerCam.transform.position, target, obstructionMask))
-            return false;                                  // a wall blocks the view
+            return false;                           // A wall blocks the view
 
         return true;
     }
@@ -71,4 +92,6 @@ public class WeepingAngelAI : MonoBehaviour
         if (Level5Manager.Instance != null)
             Level5Manager.Instance.RegisterLockedAngel();
     }
+
+
 }

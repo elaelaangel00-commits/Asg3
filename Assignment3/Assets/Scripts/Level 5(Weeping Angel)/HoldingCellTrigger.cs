@@ -7,7 +7,6 @@ public class HoldingCellTrigger : MonoBehaviour
     [SerializeField] private AudioSource lockSound;
 
     private bool occupied;
-
     private void OnTriggerEnter(Collider other)
     {
         if (occupied) return;
