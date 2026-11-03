@@ -1,34 +1,54 @@
+using TMPro;
 using UnityEngine;
-using UnityEngine.UI;   // use TMPro instead if your texts are TextMeshPro
+using UnityEngine.SceneManagement;
 
 public class Level5Manager : MonoBehaviour
 {
     public static Level5Manager Instance { get; private set; }
 
-    private int totalAngels = 3;
+    //Angels
+    [SerializeField] private int totalAngels = 3;
 
-    //UI & References 
-    private Text progressText;
-    private GameObject keyObject;
-    private GameObject gameOverPanel;
-    private GameObject levelCompletePanel;
-    private AudioSource unlockSound;
+   //UI
+    [SerializeField] private TMP_Text progressText;
+    [SerializeField] private GameObject gameOverPanel;
+    [SerializeField] private GameObject levelCompletePanel;
 
+    //Key
+    [SerializeField] private GameObject keyObject;   // hidden until all angels are locked
+    [SerializeField] private AudioSource unlockSound;
+
+    [SerializeField] private string startMenuSceneName = "StartMenu";
+    [SerializeField] private AudioClip interactSound;
+
+    //Audio
+    [Header("Audio")]
+    [SerializeField] private AudioSource sfxSource;     // the Audio Source with the Scream
+    [SerializeField] private AudioClip screamClip;      // the Scream file
+    [SerializeField] private AudioSource musicSource;   // your BackgroundMusic source
 
     private int lockedCount;
     private bool gameEnded;
+
+    public bool HasKey { get; private set; }
 
     private void Awake()
     {
         Instance = this;
         Time.timeScale = 1f;
+        AudioListener.pause = false;          
+        if (sfxSource != null) sfxSource.ignoreListenerPause = true;
     }
 
     private void Start()
     {
         if (keyObject != null) keyObject.SetActive(false);
-        if (gameOverPanel != null) gameOverPanel.SetActive(false);
-        if (levelCompletePanel != null) levelCompletePanel.SetActive(false);
+        UpdateHUD();
+    }
+
+    public bool IsAllAngelsSecured()
+    {
+        return lockedCount >= totalAngels;
     }
 
     public void RegisterLockedAngel()
@@ -36,53 +56,65 @@ public class Level5Manager : MonoBehaviour
         lockedCount++;
         UpdateHUD();
 
-        if (lockedCount >= totalAngels)
+        if (IsAllAngelsSecured())
         {
-            keyObject.SetActive(true);   // or play a box-opening animation
+            if (keyObject != null) keyObject.SetActive(true);
             if (unlockSound != null) unlockSound.Play();
         }
     }
-    //Check if all angels are trapped
-    public bool IsAllAngelsSecured()
+
+    public void GiveKey()
     {
-        return lockedCount >= totalAngels;
+        HasKey = true;
+        UpdateHUD();
     }
 
     public void PlayerCaught()
     {
         if (gameEnded) return;
         gameEnded = true;
+        Debug.Log("PLAYER CAUGHT! Game over starts now");
+        if (musicSource != null) musicSource.Stop();     
+        AudioListener.pause = true;                     
+        if (sfxSource != null && screamClip != null)
+            sfxSource.PlayOneShot(screamClip);           
 
-        // This will print to your console safely without throwing errors
-        Debug.Log("GAME OVER: Player was caught by a Weeping Angel!");
-
-        // Only try to turn on the panel if you have actually assigned one
-        if (gameOverPanel != null)
-        {
-            gameOverPanel.SetActive(true);
-        }
-
+        if (gameOverPanel != null) gameOverPanel.SetActive(true);
         Time.timeScale = 0f;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
     }
+    public void RestartLevel()
+    {
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
 
-    // Call this from your key pickup / exit door script
+    public void ReturnToStartMenu()
+    {
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(startMenuSceneName);
+    }
     public void CompleteLevel()
     {
         if (gameEnded) return;
         gameEnded = true;
-        levelCompletePanel.SetActive(true);
+        if (levelCompletePanel != null) levelCompletePanel.SetActive(true);
+        if (Level5Audio.Instance != null) Level5Audio.Instance.PlayLevelComplete();
         Time.timeScale = 0f;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
     }
 
-
-
     private void UpdateHUD()
     {
-        progressText.text = $"Angels locked: {lockedCount}/{totalAngels}";
+        if (progressText == null) return;
+
+        if (HasKey)
+            progressText.text = "Find the exit door";
+        else if (IsAllAngelsSecured())
+            progressText.text = "All angels locked! Get the key";
+        else
+            progressText.text = "Angels locked: " + lockedCount + "/" + totalAngels;
     }
 }
-
