@@ -72,7 +72,9 @@ public class LaserPuzzle : MonoBehaviour
                 exitDoor.position,
                 closedPosition + Vector3.up * doorOpenHeight,
                 doorSpeed * Time.deltaTime
+
             );
+            Debug.Log("Exit Door Opened");
         }
     }
 }
