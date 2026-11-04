@@ -74,8 +74,12 @@ public class Level5Manager : MonoBehaviour
         if (gameEnded) return;
         gameEnded = true;
         Debug.Log("PLAYER CAUGHT! Game over starts now");
-        if (musicSource != null) musicSource.Stop();     
+
+        if (musicSource != null) musicSource.Stop();
+        else Debug.LogWarning("Music Source is not assigned");
+
         AudioListener.pause = true;                     
+       
         if (sfxSource != null && screamClip != null)
             sfxSource.PlayOneShot(screamClip);           
 
