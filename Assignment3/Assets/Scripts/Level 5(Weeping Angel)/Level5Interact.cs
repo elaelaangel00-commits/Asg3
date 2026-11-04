@@ -3,7 +3,7 @@ using UnityEngine;
 public class Level5Interact : MonoBehaviour
 {
     [SerializeField] private Camera playerCam;
-    [SerializeField] private float interactRange = 3f;
+    //[SerializeField] private float interactRange = 3f;
     [SerializeField] private KeyCode interactKey = KeyCode.E;
 
     private void Update()
@@ -12,11 +12,6 @@ public class Level5Interact : MonoBehaviour
 
         Ray ray = new Ray(playerCam.transform.position, playerCam.transform.forward);
 
-        if (Physics.Raycast(ray, out RaycastHit hit, interactRange,
-                            ~0, QueryTriggerInteraction.Ignore))
-        {
-            KeyAndExitHandler handler = hit.collider.GetComponentInParent<KeyAndExitHandler>();
-            if (handler != null) handler.Interact();
-        }
+
     }
 }
