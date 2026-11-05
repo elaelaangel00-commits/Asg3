@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Mirror
   - Receiver
+  - WeightObject
   layers:
   - Default
   - TransparentFX
