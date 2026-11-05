@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 32a6b08ad68a91542a31a9bdbc67875e, type: 3}
+  m_Name: SimonConfig_Level 1
+  m_EditorClassIdentifier: Assembly-CSharp::Backrooms.Puzzles.Simon.SimonConfig
+  rounds: 3
+  startLength: 3
+  stepsAddedPerRound: 1
+  restartAutomatically: 1
+  leadIn: 0.8
+  betweenRounds: 1.5
+  failDelay: 2
+  inputTimeout: 4
+  flashPerRound:
+  - 0.6
+  - 0.45
+  - 0.35
+  gapPerRound:
+  - 0.3
+  - 0.25
+  - 0.2
+  stationColours:
+  - {r: 1, g: 0.55, b: 0.1, a: 1}
+  - {r: 1, g: 0.9, b: 0.2, a: 1}
+  - {r: 0.2, g: 0.9, b: 0.3, a: 1}
+  - {r: 0.2, g: 0.6, b: 1, a: 1}
+  - {r: 0.75, g: 0.3, b: 1, a: 1}
+  stationFrequencies:
+  - 523.25
+  - 587.33
+  - 659.25
+  - 783.99
+  - 880
+  watchColour: {r: 1, g: 0.9, b: 0.4, a: 1}
+  inputColour: {r: 0.4, g: 0.9, b: 1, a: 1}
+  successColour: {r: 0.3, g: 1, b: 0.4, a: 1}
+  failColour: {r: 1, g: 0.15, b: 0.15, a: 1}
