@@ -274,11 +274,11 @@ public class Level5Manager : MonoBehaviour
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
-    public void ReturnToStartMenu()
-    {
-        Time.timeScale = 1f;
-        SceneManager.LoadScene(startMenuSceneName);
-    }
+    //public void ReturnToStartMenu()
+    //{
+    //    Time.timeScale = 1f;
+    //    SceneManager.LoadScene(startMenuSceneName);
+    //}
 
     public void CompleteLevel()
     {
