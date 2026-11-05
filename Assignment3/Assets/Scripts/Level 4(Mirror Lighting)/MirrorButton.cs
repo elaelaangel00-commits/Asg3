@@ -10,5 +10,6 @@ public class MirrorButton : MonoBehaviour
     {
         //rotate mirror when button is pressed
         mirror.Rotate(0f, rotateAngle, 0f, Space.World);
+        Debug.Log("Mirror Moved");
     }
 }
