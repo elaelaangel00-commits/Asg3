@@ -49,23 +49,61 @@ public class PressurePlatePuzzle : MonoBehaviour
             return;
         }
 
+        if (plates == null || plates.Length == 0)
+        {
+            return;
+        }
+
+        bool allOccupied = true;
+        bool allPlateWeightsCorrect = true;
+
+        foreach (PressurePlate plate in plates)
+        {
+            if (plate == null)
+            {
+                return;
+            }
+
+            if (!plate.IsOccupied)
+            {
+                allOccupied = false;
+            }
+
+            if (!plate.HasCorrectWeight)
+            {
+                allPlateWeightsCorrect = false;
+            }
+        }
+
+        bool allRulesPassed = true;
+
         foreach (PressurePlateRule rule in rules)
         {
-            if (rule == null)
+            if (rule == null || !rule.isActiveAndEnabled)
             {
                 continue;
             }
 
             if (!rule.IsValid())
             {
-                statusUI?.ShowMessage(rule.GetFailureMessage());
-                return;
+                allRulesPassed = false;
+                break;
             }
         }
 
-        IsSolved = true;
+        bool solved = allOccupied && allPlateWeightsCorrect && allRulesPassed;
 
-        statusUI?.ShowMessage("Pressure plate puzzle solved.");
+        foreach (PressurePlate plate in plates)
+        {
+            plate.SetFeedback(allOccupied, solved);
+        }
+
+        if (!solved)
+        {
+            return;
+        }
+
+        IsSolved = true;
         PuzzleSolved?.Invoke();
     }
 }

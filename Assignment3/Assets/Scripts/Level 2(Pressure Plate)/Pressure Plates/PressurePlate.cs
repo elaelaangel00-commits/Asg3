@@ -1,98 +1,140 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class PressurePlate : MonoBehaviour
 {
-    [SerializeField] private int requiredWeight;
+    [Header("Weight")]
+    [SerializeField, Min(1)] private int requiredWeight = 1;
+
+    [Header("Feedback Surface")]
     [SerializeField] private Renderer plateRenderer;
-    [SerializeField] private Color inactiveColor = Color.gray;
+
+    [Header("Feedback Colours")]
+    [SerializeField] private Color neutralColor = Color.gray;
+    [SerializeField] private Color incorrectColor = Color.red;
+    [SerializeField] private Color waitingColor = Color.yellow;
     [SerializeField] private Color correctColor = Color.green;
 
-    [SerializeField] private AudioSource plateAudio;
-    [SerializeField] private AudioClip plateActivateClip;
-    [SerializeField] private AudioClip plateDeactivateClip;
+    private readonly HashSet<Collider> overlappingColliders = new();
+    private readonly HashSet<WeightedObject> countedObjects = new();
 
-    private readonly List<WeightedObject> objectsOnPlate = new List<WeightedObject>();
+    private Material feedbackMaterial;
+    private Color displayedColor;
+    private bool hasDisplayedColor;
 
     public int CurrentWeight { get; private set; }
-    public bool HasCorrectWeight => CurrentWeight == requiredWeight;
+    public int ObjectCount { get; private set; }
 
-    public event System.Action<PressurePlate> StateChanged;
+    public bool IsOccupied => ObjectCount > 0;
 
-    private void Start()
+    public bool HasCorrectWeight => ObjectCount == 1 && CurrentWeight == requiredWeight;
+
+    public event Action<PressurePlate> StateChanged;
+
+    private void Awake()
     {
-        RefreshVisual();
+        if (plateRenderer != null)
+        {
+            feedbackMaterial = plateRenderer.material;
+        }
+
+        SetFeedback(false, false);
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (!other.TryGetComponent(out WeightedObject weightedObject))
-        {
-            return;
-        }
+        overlappingColliders.Add(other);
+    }
 
-        if (weightedObject.IsCarried)
-        {
-            return;
-        }
-
-        if (objectsOnPlate.Contains(weightedObject))
-        {
-            return;
-        }
-
-        objectsOnPlate.Add(weightedObject);
-        RecalculateWeight();
+    private void OnTriggerStay(Collider other)
+    {
+        overlappingColliders.Add(other);
     }
 
     private void OnTriggerExit(Collider other)
     {
-        if (!other.TryGetComponent(out WeightedObject weightedObject))
-        {
-            return;
-        }
+        overlappingColliders.Remove(other);
+    }
 
-        if (objectsOnPlate.Remove(weightedObject))
-        {
-            RecalculateWeight();
-        }
+    private void FixedUpdate()
+    {
+        RecalculateWeight();
     }
 
     private void RecalculateWeight()
     {
-        CurrentWeight = 0;
-        
-        foreach (WeightedObject weightedObject in objectsOnPlate)
+        overlappingColliders.RemoveWhere(collider => collider == null || !collider.enabled || !collider.gameObject.activeInHierarchy);
+
+        countedObjects.Clear();
+
+        int newWeight = 0;
+
+        foreach (Collider other in overlappingColliders)
         {
-            CurrentWeight += weightedObject.Weight;
+            WeightedObject weight = other.GetComponentInParent<WeightedObject>();
+
+            if (weight == null || weight.IsCarried)
+            {
+                continue;
+            }
+
+            if (countedObjects.Add(weight))
+            {
+                newWeight += weight.Weight;
+            }
         }
 
-        RefreshVisual();
-        StateChanged?.Invoke(this);
-    }
+        int newCount = countedObjects.Count;
 
-    private void RefreshVisual()
-    {
-        if (plateRenderer == null)
-        {
-            plateRenderer.material.color = HasCorrectWeight ? correctColor : inactiveColor;
-        }
-
-        PlayPlateSound();
-    }
-
-    private void PlayPlateSound()
-    {
-        if (plateAudio == null)
+        if (newWeight == CurrentWeight && newCount == ObjectCount)
         {
             return;
         }
 
-        AudioClip clip = HasCorrectWeight ? plateActivateClip : plateDeactivateClip;
+        CurrentWeight = newWeight;
+        ObjectCount = newCount;
 
-        if (clip != null)
+        StateChanged?.Invoke(this);
+    }
+
+    public void SetFeedback(bool allPlatesOccupied, bool puzzleSolved)
+    {
+        Color nextColor;
+
+        if (puzzleSolved)
         {
-            plateAudio.PlayOneShot(clip);
+            nextColor = correctColor;
+        }
+        else if (!allPlatesOccupied)
+        {
+            nextColor = neutralColor;
+        }
+        else
+        {
+            nextColor = HasCorrectWeight ? waitingColor : incorrectColor;
+        }
+
+        if (feedbackMaterial == null)
+        {
+            return;
+        }
+
+        if (hasDisplayedColor && displayedColor == nextColor)
+        {
+            return;
+        }
+
+        displayedColor = nextColor;
+        hasDisplayedColor = true;
+        feedbackMaterial.color = nextColor;
+    }
+
+    private void OnDestroy()
+    {
+        if (feedbackMaterial != null)
+        {
+            Destroy(feedbackMaterial);
         }
     }
 }
