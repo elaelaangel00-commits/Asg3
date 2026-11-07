@@ -1,17 +1,24 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+using System.Collections;
 
 public class InteractionPromptUI : MonoBehaviour
 {
+    [Header("References")]
     [SerializeField] private Camera playerCamera;
     [SerializeField] private ObjectPickup objectPickup;
     [SerializeField] private TMP_Text promptText;
-    [SerializeField] private float interactionRange = 3f;
+    [SerializeField] private DoorController doorController;
 
+    [Header("Interaction")]
+    [SerializeField] private float interactionRange = 3f;
     [SerializeField] private LayerMask detectionLayers = ~0;
 
+    [Header("Instructions")]
     [SerializeField] private string pickupInstruction = "[E] Pick up";
     [SerializeField] private string dropInstruction = "[E] Place";
+    [SerializeField] private string doorInstruction = "[E] Go to next room";
 
     private void Update()
     {
@@ -46,6 +53,12 @@ public class InteractionPromptUI : MonoBehaviour
             if (weight != null && !weight.IsCarried)
             {
                 promptText.text = $"Weight: {weight.Weight} kg\n" + pickupInstruction;
+                return;
+            }
+
+            if (doorController != null && doorController.CanInteract && doorController.ContainsCollider(hit.collider))
+            {
+                promptText.text = doorInstruction;
             }
         }
     }

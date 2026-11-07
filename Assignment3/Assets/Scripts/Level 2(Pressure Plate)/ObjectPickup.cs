@@ -166,6 +166,8 @@ public class ObjectPickup : MonoBehaviour
             body.position = targetPosition;
         }
 
+        PlaceUprightFacingPlayer(placedObject.transform);
+
         placedObject.Drop();
         
         if (body != null && !body.isKinematic)
@@ -180,6 +182,21 @@ public class ObjectPickup : MonoBehaviour
         {
             dropAudio.Play();
         }
+    }
+
+    private void PlaceUprightFacingPlayer(Transform objectTransform)
+    {
+        Vector3 flatForward = playerCamera.transform.forward;
+        flatForward.y = 0f;
+
+        if (flatForward.sqrMagnitude < 0.0001f)
+        {
+            flatForward = Vector3.forward;
+        }
+
+        flatForward.Normalize();
+
+        objectTransform.rotation = Quaternion.LookRotation(flatForward, Vector3.up);
     }
 
     private bool BelongsToHeldObject(Collider other)
