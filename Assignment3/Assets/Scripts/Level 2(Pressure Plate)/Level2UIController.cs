@@ -21,6 +21,11 @@ public class Level2UIController : MonoBehaviour
     [Header("Scene")]
     [SerializeField] private string startMenuScene = "StartMenu";
 
+    [Header("UI Audio")]
+    [SerializeField] private AudioSource uiAudio;
+    [SerializeField] private AudioClip menuOpenClip;
+    [SerializeField] private AudioClip noteOpenClip;
+
     private ScreenState state;
     private bool[] previousEnabledStates;
     private float previousTimeScale = 1f;
@@ -63,11 +68,15 @@ public class Level2UIController : MonoBehaviour
     public void OpenPause()
     {
         OpenScreen(ScreenState.Pause);
+
+        PlayMenuOpen();
     }
 
     public void OpenNotes()
     {
         OpenScreen(ScreenState.Notes);
+
+        PlayNoteOpenSound();
     }
 
     private void OpenScreen(ScreenState nextState)
@@ -144,6 +153,22 @@ public class Level2UIController : MonoBehaviour
     {
         Cursor.lockState = menuOpen ? CursorLockMode.None : CursorLockMode.Locked;
         Cursor.visible = menuOpen;
+    }
+
+    public void PlayMenuOpen()
+    {
+        if (uiAudio != null && menuOpenClip != null)
+        {
+            uiAudio.PlayOneShot(menuOpenClip);
+        }
+    }
+
+    public void PlayNoteOpenSound()
+    {
+        if (uiAudio != null && noteOpenClip != null)
+        {
+            uiAudio.PlayOneShot(noteOpenClip);
+        }
     }
 
     private void OnDestroy()

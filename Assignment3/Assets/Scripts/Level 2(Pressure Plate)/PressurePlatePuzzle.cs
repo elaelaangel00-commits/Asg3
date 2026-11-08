@@ -3,18 +3,13 @@ using UnityEngine;
 public class PressurePlatePuzzle : MonoBehaviour
 {
     [SerializeField] private PressurePlate[] plates;
-    [SerializeField] private PuzzleStatusUI statusUI;
 
-    private PressurePlateRule[] rules;
+    [SerializeField] private AudioSource puzzleAudio;
+    [SerializeField] private AudioClip puzzleSolvedClip;
 
     public bool IsSolved { get; private set; }
 
     public event System.Action PuzzleSolved;
-
-    private void Awake()
-    {
-        rules = GetComponents<PressurePlateRule>();
-    }
     
     private void OnEnable()
     {
@@ -75,23 +70,7 @@ public class PressurePlatePuzzle : MonoBehaviour
             }
         }
 
-        bool allRulesPassed = true;
-
-        foreach (PressurePlateRule rule in rules)
-        {
-            if (rule == null || !rule.isActiveAndEnabled)
-            {
-                continue;
-            }
-
-            if (!rule.IsValid())
-            {
-                allRulesPassed = false;
-                break;
-            }
-        }
-
-        bool solved = allOccupied && allPlateWeightsCorrect && allRulesPassed;
+        bool solved = allOccupied && allPlateWeightsCorrect;
 
         foreach (PressurePlate plate in plates)
         {
@@ -105,5 +84,10 @@ public class PressurePlatePuzzle : MonoBehaviour
 
         IsSolved = true;
         PuzzleSolved?.Invoke();
+
+        if (puzzleAudio != null && puzzleSolvedClip != null)
+        {
+            puzzleAudio.PlayOneShot(puzzleSolvedClip);
+        }
     }
 }

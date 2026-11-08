@@ -4,6 +4,11 @@ public class WeightedObject : MonoBehaviour
 {
     [SerializeField] private int weight = 1;
 
+    [Header("Audio")]
+    [SerializeField] private AudioSource objectAudio;
+    [SerializeField] private AudioClip pickupClip;
+    [SerializeField] private AudioClip placeClip;
+
     private Rigidbody rigidbodyComponent;
 
     public int Weight => weight;
@@ -18,6 +23,8 @@ public class WeightedObject : MonoBehaviour
     {
         IsCarried = true;
 
+        PlayPickupSound();
+
         if (rigidbodyComponent != null)
         {
             rigidbodyComponent.isKinematic = true;
@@ -29,10 +36,28 @@ public class WeightedObject : MonoBehaviour
     {
         IsCarried = false;
 
+        PlayPlaceSound();
+
         if (rigidbodyComponent != null)
         {
             rigidbodyComponent.isKinematic = false;
             rigidbodyComponent.useGravity = true;
+        }
+    }
+
+    public void PlayPickupSound()
+    {
+        if (objectAudio != null && pickupClip != null)
+        {
+            objectAudio.PlayOneShot(pickupClip);
+        }
+    }
+
+    public void PlayPlaceSound()
+    {
+        if (objectAudio != null && placeClip != null)
+        {
+            objectAudio.PlayOneShot(placeClip);
         }
     }
 }

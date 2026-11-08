@@ -18,10 +18,6 @@ public class ObjectPickup : MonoBehaviour
     [SerializeField, Range(0f, 1f)] private float minimumUpwardNormal = 0.9f;
     [SerializeField] private LayerMask placementLayers = ~0;
 
-    [Header("Audio")]
-    [SerializeField] private AudioSource pickupAudio;
-    [SerializeField] private AudioSource dropAudio;
-
     private WeightedObject carriedObject;
 
     public WeightedObject CarriedObject => carriedObject;
@@ -82,11 +78,6 @@ public class ObjectPickup : MonoBehaviour
 
             carriedObject = weight;
             carriedObject.PickUp();
-
-            if (pickupAudio != null)
-            {
-                pickupAudio.Play();
-            }
 
             return;
         }
@@ -177,11 +168,6 @@ public class ObjectPickup : MonoBehaviour
         }
 
         carriedObject = null;
-
-        if (dropAudio != null)
-        {
-            dropAudio.Play();
-        }
     }
 
     private void PlaceUprightFacingPlayer(Transform objectTransform)

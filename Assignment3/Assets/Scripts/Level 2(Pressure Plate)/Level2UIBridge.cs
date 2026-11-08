@@ -4,7 +4,6 @@ using UnityEngine;
 public class Level2UIBridge : MonoBehaviour
 {
     [SerializeField] private PressurePlatePuzzle puzzle;
-    [SerializeField] private PuzzleStatusUI statusUI;
     [SerializeField] private TMP_Text objectiveText;
 
     private void OnEnable()
@@ -37,7 +36,5 @@ public class Level2UIBridge : MonoBehaviour
         {
             objectiveText.text = "ROOM 2 COMPLETE!\n" + "The door is now unlocked.";
         }
-
-        statusUI?.ShowMessage("Puzzle solved. Door unlocked.");
     }
 }
