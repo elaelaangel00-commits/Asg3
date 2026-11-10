@@ -51,10 +51,14 @@ public class SlotZone : MonoBehaviour
         item.PlaceAt(itemAnchor != null ? itemAnchor : transform);
     }
 
-    // Used after a wrong sequence
-    public void ClearAndReturnItem()
+ 
+    // Used after a wrong sequence: empties the slot and gives back the skull that was on it
+    public ItemPickUp ClearAndTakeItem()
     {
-        if (placedItem != null) placedItem.ResetToStart();
+        ItemPickUp item = placedItem;
         placedItem = null;
+
+        if (item != null) item.ReturnToHands();
+        return item;
     }
 }

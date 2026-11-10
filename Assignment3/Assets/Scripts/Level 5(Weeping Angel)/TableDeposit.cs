@@ -1,7 +1,9 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
+
 #endif
 
 // Put this on ONE empty GameObject (e.g. "TableManager"). It needs no collider.
@@ -151,13 +153,20 @@ public class TableDeposit : MonoBehaviour
     {
         resetting = true;
         PlaySound(wrongSound, transform.position);
-        Level5Manager.Instance.ShowMessage("Wrong order! The items return to the maze...", wrongResetDelay);
+        Level5Manager.Instance.ShowMessage("Wrong order! The skulls return to your hands...", wrongResetDelay);
 
         yield return new WaitForSeconds(wrongResetDelay);
 
-        // Send every item back to where it started
-        foreach (SlotZone s in slots) s.ClearAndReturnItem();
-        Level5Manager.Instance.SetPlacedCount(0);
+        // Clear every slot and collect the skulls that were on them
+        List<ItemPickUp> returned = new List<ItemPickUp>();
+        foreach (SlotZone s in slots)
+        {
+            ItemPickUp item = s.ClearAndTakeItem();
+            if (item != null) returned.Add(item);
+        }
+
+        // Put them back in the player's inventory (nothing respawns in the maze)
+        Level5Manager.Instance.ReturnItemsToInventory(returned);
 
         resetting = false;
     }

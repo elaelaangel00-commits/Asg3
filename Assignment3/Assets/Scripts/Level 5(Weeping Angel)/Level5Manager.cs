@@ -37,16 +37,16 @@ public class Level5Manager : MonoBehaviour
 
     [Header("Held item indicator")]
     [SerializeField] private TMP_Text heldText;         // "Holding: Red Skull"
-    [SerializeField] private Image heldIcon;            // colour swatch of the held skull
 
-    [SerializeField] private string startMenuSceneName = "StartMenu";
-    [SerializeField] private AudioClip interactSound;
+    [Header("Exit")]
+    [Tooltip("An empty object placed just past the exit door.")]
+    [SerializeField] private Transform exitPoint;
+    [SerializeField] private float exitRadius = 1.5f;
 
     // ---------- Audio ----------
     [Header("Audio")]
     [SerializeField] private AudioSource sfxSource;     // the Audio Source with the Scream
     [SerializeField] private AudioClip screamClip;      // the Scream file
-    [SerializeField] private AudioSource musicSource;   // your BackgroundMusic source
 
     private int lockedCount;
     private int placedCount;
@@ -59,6 +59,7 @@ public class Level5Manager : MonoBehaviour
     private readonly List<ItemPickUp> inventory = new List<ItemPickUp>();
     private int selectedIndex;
 
+    private Transform player;
     public bool HasHeldItem => inventory.Count > 0;
     public ItemPickUp HeldItem => inventory.Count > 0 ? inventory[selectedIndex] : null;
     public int RequiredItems => requiredItems;
@@ -76,6 +77,9 @@ public class Level5Manager : MonoBehaviour
 
     private void Start()
     {
+        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+        if (playerObj != null) player = playerObj.transform;
+
         if (messageText != null) messageText.text = "";
 
         if (introPanel != null)
@@ -96,13 +100,38 @@ public class Level5Manager : MonoBehaviour
             return;
         }
 
-        if (gameEnded || puzzleSolved) return;
+        if (gameEnded) return;
+
+        // After the puzzle is solved: finish the level when the player reaches the exit
+        if (puzzleSolved)
+        {
+            CheckExitReached();
+            return;
+        }
 
         // Number keys 1/2/3 choose which carried item to place
         int key = GetNumberKeyPressed();
         if (key >= 0) SelectItem(key);
     }
+    private void CheckExitReached()
+    {
+        if (exitPoint == null || player == null) return;
 
+        // Floor distance only (ignore height)
+        Vector3 a = exitPoint.position; a.y = 0f;
+        Vector3 b = player.position; b.y = 0f;
+
+        if (Vector3.Distance(a, b) <= exitRadius)
+            CompleteLevel();
+    }
+
+    // Shows the exit area in the Scene view when LevelManager is selected
+    private void OnDrawGizmosSelected()
+    {
+        if (exitPoint == null) return;
+        Gizmos.color = Color.green;
+        Gizmos.DrawWireSphere(exitPoint.position, exitRadius);
+    }
     // ===================== INTRO POPUP =====================
 
     private void ShowIntro()
@@ -253,10 +282,6 @@ public class Level5Manager : MonoBehaviour
         if (gameEnded) return;
         gameEnded = true;
         Debug.Log("PLAYER CAUGHT! Game over starts now");
-
-        if (musicSource != null) musicSource.Stop();
-        else Debug.LogWarning("Music Source is not assigned");
-
         AudioListener.pause = true;
 
         if (sfxSource != null && screamClip != null)
@@ -273,12 +298,6 @@ public class Level5Manager : MonoBehaviour
         Time.timeScale = 1f;
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
-
-    //public void ReturnToStartMenu()
-    //{
-    //    Time.timeScale = 1f;
-    //    SceneManager.LoadScene(startMenuSceneName);
-    //}
 
     public void CompleteLevel()
     {
@@ -337,12 +356,20 @@ public class Level5Manager : MonoBehaviour
                 heldText.text = "Hands empty";
         }
 
-        if (heldIcon != null)
-        {
-            heldIcon.enabled = held != null && !puzzleSolved;
-            if (held != null) heldIcon.color = held.ItemColor;
-        }
     }
+
+    // After a wrong order: the table is cleared and the skulls go back into the inventory
+    public void ReturnItemsToInventory(List<ItemPickUp> items)
+    {
+        placedCount = 0;
+
+        foreach (ItemPickUp item in items)
+            if (item != null && !inventory.Contains(item)) inventory.Add(item);
+
+        selectedIndex = 0;
+        UpdateHUD();
+    }
+
     private void LateUpdate()
     {
         // Runs after every other script's Update, so it wins over a look script
