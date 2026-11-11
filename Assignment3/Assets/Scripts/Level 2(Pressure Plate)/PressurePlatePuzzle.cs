@@ -3,18 +3,13 @@ using UnityEngine;
 public class PressurePlatePuzzle : MonoBehaviour
 {
     [SerializeField] private PressurePlate[] plates;
-    [SerializeField] private PuzzleStatusUI statusUI;
 
-    private PressurePlateRule[] rules;
+    [SerializeField] private AudioSource puzzleAudio;
+    [SerializeField] private AudioClip puzzleSolvedClip;
 
     public bool IsSolved { get; private set; }
 
     public event System.Action PuzzleSolved;
-
-    private void Awake()
-    {
-        rules = GetComponents<PressurePlateRule>();
-    }
     
     private void OnEnable()
     {
@@ -49,23 +44,50 @@ public class PressurePlatePuzzle : MonoBehaviour
             return;
         }
 
-        foreach (PressurePlateRule rule in rules)
+        if (plates == null || plates.Length == 0)
         {
-            if (rule == null)
+            return;
+        }
+
+        bool allOccupied = true;
+        bool allPlateWeightsCorrect = true;
+
+        foreach (PressurePlate plate in plates)
+        {
+            if (plate == null)
             {
-                continue;
+                return;
             }
 
-            if (!rule.IsValid())
+            if (!plate.IsOccupied)
             {
-                statusUI?.ShowMessage(rule.GetFailureMessage());
-                return;
+                allOccupied = false;
+            }
+
+            if (!plate.HasCorrectWeight)
+            {
+                allPlateWeightsCorrect = false;
             }
         }
 
-        IsSolved = true;
+        bool solved = allOccupied && allPlateWeightsCorrect;
 
-        statusUI?.ShowMessage("Pressure plate puzzle solved.");
+        foreach (PressurePlate plate in plates)
+        {
+            plate.SetFeedback(allOccupied, solved);
+        }
+
+        if (!solved)
+        {
+            return;
+        }
+
+        IsSolved = true;
         PuzzleSolved?.Invoke();
+
+        if (puzzleAudio != null && puzzleSolvedClip != null)
+        {
+            puzzleAudio.PlayOneShot(puzzleSolvedClip);
+        }
     }
 }

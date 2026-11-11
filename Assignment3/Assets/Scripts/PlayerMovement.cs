@@ -22,6 +22,8 @@ public class PlayerMovement : MonoBehaviour
     public LayerMask whatISGround;
     bool grounded;
 
+    public bool IsGrounded => grounded;
+
     float horizontalInput;
     float verticleInput;
 
