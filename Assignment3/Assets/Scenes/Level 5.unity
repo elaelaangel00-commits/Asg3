@@ -1002,8 +1002,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -114, y: -80}
-  m_SizeDelta: {x: 160, y: 30}
+  m_AnchoredPosition: {x: 54, y: 106.060974}
+  m_SizeDelta: {x: 160, y: 41.1043}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &182122097
 MonoBehaviour:
@@ -10990,8 +10990,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 183, y: -80}
-  m_SizeDelta: {x: 160, y: 30}
+  m_AnchoredPosition: {x: 54, y: -19.04712}
+  m_SizeDelta: {x: 202.1049, y: 45.6098}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1941761472
 MonoBehaviour:
@@ -11383,6 +11383,7 @@ MonoBehaviour:
   exitRadius: 2
   sfxSource: {fileID: 1974771118}
   screamClip: {fileID: 8300000, guid: 6f3d3f4c838485546aea6e24cd565481, type: 3}
+  startMenuSceneName: StartMenuScene
 --- !u!4 &1982358357 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: ef48b9eda3035c1418cc6926021ada90, type: 3}
@@ -11615,7 +11616,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 456048913}
         m_TargetAssemblyTypeName: Level2UIController, Assembly-CSharp
         m_MethodName: ResumeGame
         m_Mode: 1
