@@ -1503,7 +1503,7 @@ GameObject:
   - component: {fileID: 145732601}
   - component: {fileID: 145732600}
   m_Layer: 5
-  m_Name: InteractionText
+  m_Name: PromptText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -7935,10 +7935,10 @@ MonoBehaviour:
   lightOffMaterial: {fileID: 2100000, guid: 0e030d7f575174d46b4cf76125cc0957, type: 2}
   lightOnMaterial: {fileID: 2100000, guid: 7ca284beef5dd3c4bb5a49b319a31129, type: 2}
   exitDoor: {fileID: 1057997560}
-  nextSceneName: Room4
+  nextSceneName: Level 4
   interactKey: 101
   interactRange: 2.5
-  touchDistance: 0.8
+  doorPrompt: Open door to the next room
 --- !u!1 &1099144049
 GameObject:
   m_ObjectHideFlags: 0

@@ -3,7 +3,7 @@ using UnityEngine.SceneManagement;
 
 // Runs the whole circuit room: activates sections in order, lights up the power box,
 // makes the exit door appear, keeps the objective UI up to date, and loads the next
-// scene when the player touches the door or looks at it and presses E.
+// scene when the player looks at the door and presses E.
 public class RoomManager : MonoBehaviour
 {
     [Header("Sections (in order)")]
@@ -19,13 +19,11 @@ public class RoomManager : MonoBehaviour
     public string nextSceneName = "Level 4";  // must match the scene name in Build Profiles / Build Settings
     public KeyCode interactKey = KeyCode.E;
     public float interactRange = 2.5f;      // how far away you can press E on the door
-
+    public string doorPrompt = "Open door";   // shown under the crosshair when looking at the door
 
     int current;                            // index of the active section
     bool doorOpen;
     bool loading;
-    Collider doorCollider;
-    Transform player;
 
     void Start()
     {
@@ -38,12 +36,8 @@ public class RoomManager : MonoBehaviour
 
         if (exitDoor != null)
         {
-            doorCollider = exitDoor.GetComponentInChildren<Collider>(true);
             exitDoor.SetActive(false);   // door only appears once the room is solved
         }
-
-        PlayerMovement pm = FindFirstObjectByType<PlayerMovement>();
-        if (pm != null) player = pm.transform;
 
         ActivateSection(0);
     }
@@ -62,11 +56,20 @@ public class RoomManager : MonoBehaviour
     {
         if (!doorOpen || loading || Level3UIManager.IsPaused) return;
 
-        if (PlayerPressedEOnDoor())
+        bool pressedE = Input.GetKeyDown(interactKey) && LookingAtDoor();
+        if (pressedE)
         {
             loading = true;
             SceneManager.LoadScene(nextSceneName);
         }
+    }
+
+    // Runs after every Update, so this prompt wins over PlayerWireHand's prompt
+    void LateUpdate()
+    {
+        if (!doorOpen || loading || Level3UIManager.IsPaused || Level3UIManager.Instance == null) return;
+        if (LookingAtDoor())
+            Level3UIManager.Instance.SetPrompt("[" + interactKey + "] " + doorPrompt);
     }
 
     // ---------------- sections ----------------
@@ -104,10 +107,10 @@ public class RoomManager : MonoBehaviour
         RefreshUI();
     }
 
-
-    bool PlayerPressedEOnDoor()
+    // Is the crosshair on the door, within range?
+    bool LookingAtDoor()
     {
-        if (!Input.GetKeyDown(interactKey) || exitDoor == null) return false;
+        if (exitDoor == null) return false;
 
         Camera cam = Camera.main;
         if (cam == null) return false;

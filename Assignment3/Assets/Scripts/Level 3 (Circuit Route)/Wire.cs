@@ -22,6 +22,10 @@ public class Wire : MonoBehaviour
     [Range(0.9f, 1f)] public float damping = 0.98f;   // lower = settles faster, less swing
     public int iterations = 15;            // more = stiffer, less stretchy rope
 
+    [Header("Length limits")]
+    public float maxLength = 10f;          // while carrying: the wire never gets longer than this per span (it goes taut instead)
+    public float connectedSlack = 1.05f;   // once plugged in / wrapped: length is FIXED at straight distance x this (a little loose)
+
     [Header("Floor collision")]
     public LayerMask floorMask = ~0;       // set to your environment layer - NOT the Player layer
     public float thickness = 0.03f;
@@ -41,6 +45,7 @@ public class Wire : MonoBehaviour
     {
         public Vector3[] pos;    // current point positions
         public Vector3[] prev;   // positions last frame (velocity = pos - prev)
+        public float lockedLength = -1f;   // > 0 = this span's length is fixed (it no longer pays out)
 
         public Span(int points, Vector3 start)
         {
@@ -110,6 +115,7 @@ public class Wire : MonoBehaviour
     public void Wrap(WireRod rod)
     {
         rods.Add(rod);
+        LockSpan(spans.Count - 1);   // the span that now ends at this rod stops growing
         spans.Add(new Span(segmentsPerSpan + 1, rod.WrapPoint));   // new span from this rod to the plug
         coils.Add(MakeCoil(rod));
     }
@@ -122,7 +128,21 @@ public class Wire : MonoBehaviour
         spans.RemoveAt(spans.Count - 1);
         Destroy(coils[last]);
         coils.RemoveAt(last);
+        spans[spans.Count - 1].lockedLength = -1f;   // this span ends at the plug again, so it can pay out
         return true;
+    }
+
+    // Fix a span's length at (straight distance x connectedSlack)
+    void LockSpan(int s)
+    {
+        SpanEnds(s, out Vector3 a, out Vector3 b);
+        spans[s].lockedLength = Mathf.Max(Vector3.Distance(a, b) * connectedSlack, minLength);
+    }
+
+    void SpanEnds(int s, out Vector3 a, out Vector3 b)
+    {
+        a = s == 0 ? Source.TopPoint : rods[s - 1].WrapPoint;
+        b = s < rods.Count ? rods[s].WrapPoint : plug.position;
     }
 
     GameObject MakeCoil(WireRod rod)
@@ -155,6 +175,7 @@ public class Wire : MonoBehaviour
         plug.SetParent(transform, false);
         plug.localScale = plugScale;
         plug.SetPositionAndRotation(socket.TopPoint + Vector3.up * plugScale.y, Quaternion.identity);
+        LockSpan(spans.Count - 1);   // connected: the last span stops paying out and just hangs loosely
     }
 
     // ---------------- simulation ----------------
@@ -167,8 +188,7 @@ public class Wire : MonoBehaviour
 
         for (int s = 0; s < spans.Count; s++)
         {
-            Vector3 a = s == 0 ? Source.TopPoint : rods[s - 1].WrapPoint;
-            Vector3 b = s < rods.Count ? rods[s].WrapPoint : plug.position;
+            SpanEnds(s, out Vector3 a, out Vector3 b);
             Simulate(spans[s], a, b, dt);
         }
         Draw();
@@ -180,7 +200,11 @@ public class Wire : MonoBehaviour
         Vector3[] prev = span.prev;
         int n = pos.Length - 1;
 
-        float ropeLength = Mathf.Max(Vector3.Distance(a, b) * slack, minLength);
+        float straight = Vector3.Distance(a, b);
+        float ropeLength = span.lockedLength > 0f
+            ? span.lockedLength                                   // connected: fixed length
+            : Mathf.Clamp(straight * slack, minLength, maxLength); // carrying: pays out, up to maxLength
+        ropeLength = Mathf.Max(ropeLength, straight);             // never shorter than the gap (avoids fighting/jitter)
         float segLength = ropeLength / n;
 
         // 1. Verlet step: keep moving the way it was moving, plus gravity
@@ -227,6 +251,23 @@ public class Wire : MonoBehaviour
                     pos[i].y = minY;
                     prev[i].y = minY;
                 }
+            }
+        }
+
+        // 4. Safety: a hanging wire can never rise above its higher end, and a broken
+        //    simulation (NaN) snaps back to a straight line instead of flying off
+        float maxY = Mathf.Max(a.y, b.y) + 0.05f;
+        for (int i = 1; i < n; i++)
+        {
+            if (float.IsNaN(pos[i].x) || float.IsNaN(pos[i].y) || float.IsNaN(pos[i].z))
+            {
+                pos[i] = prev[i] = Vector3.Lerp(a, b, i / (float)n);
+                continue;
+            }
+            if (pos[i].y > maxY)
+            {
+                pos[i].y = maxY;
+                prev[i].y = maxY;
             }
         }
     }
