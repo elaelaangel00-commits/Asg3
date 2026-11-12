@@ -1,7 +1,7 @@
-using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+// Controls the level exit door - the door only becomes interactive after the puzzle has been solved
 public class DoorController : MonoBehaviour
 {
     [Header("References")]
@@ -24,11 +24,21 @@ public class DoorController : MonoBehaviour
 
     private void OnEnable()
     {
+        if (pressurePlatePuzzle == null)
+        {
+            return;
+        }
+
         pressurePlatePuzzle.PuzzleSolved += OnPuzzleSolved;
     }
 
     private void OnDisable()
     {
+        if (pressurePlatePuzzle == null)
+        {
+            return;
+        }
+
         pressurePlatePuzzle.PuzzleSolved -= OnPuzzleSolved;
     }
 
@@ -50,6 +60,8 @@ public class DoorController : MonoBehaviour
         }
     }
 
+    // Checks whether a Collider belongs to the door or one of its child objects
+    // Used by InteractionPromptUI to determine whether the player is looking at the door
     public bool ContainsCollider(Collider collider)
     {
         return collider.transform == transform || collider.transform.IsChildOf(transform);

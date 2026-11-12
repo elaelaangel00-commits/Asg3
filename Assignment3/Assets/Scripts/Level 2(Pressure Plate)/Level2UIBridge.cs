@@ -1,6 +1,7 @@
 using TMPro;
 using UnityEngine;
 
+// Updates the objective text when the puzzle is solved
 public class Level2UIBridge : MonoBehaviour
 {
     [SerializeField] private PressurePlatePuzzle puzzle;

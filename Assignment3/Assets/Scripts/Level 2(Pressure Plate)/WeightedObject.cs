@@ -1,5 +1,6 @@
 using UnityEngine;
 
+// Represents an object with a weight that can be picked up and placed on pressure plates
 public class WeightedObject : MonoBehaviour
 {
     [SerializeField] private int weight = 1;
@@ -9,7 +10,7 @@ public class WeightedObject : MonoBehaviour
     [SerializeField] private AudioClip pickupClip;
     [SerializeField] private AudioClip placeClip;
 
-    private Rigidbody rigidbodyComponent;
+    private Rigidbody rigidbodyComponent; // Used to enable and disable physics
 
     public int Weight => weight;
     public bool IsCarried { get; private set; }

@@ -1,20 +1,21 @@
 using UnityEngine;
 
+// Plays looping footsteps audio whenever the player moves
 [RequireComponent(typeof(AudioSource))]
 [RequireComponent(typeof(PlayerMovement))]
 public class PlayerFootsteps : MonoBehaviour
 {
     [Header("References")]
-    [SerializeField] private PlayerMovement playerMovement;
-    [SerializeField] private Rigidbody playerRigidbody;
+    [SerializeField] private PlayerMovement playerMovement; // Used to heck whether the player is grounded
+    [SerializeField] private Rigidbody playerRigidbody; // Used to measure the player's movement speed
 
     [Header("Footstep Audio")]
     [SerializeField] private AudioClip footstepLoopClip;
     [SerializeField, Range(0f, 1f)] private float footstepVolume = 0.5f;
 
     [Header("Movement Detection")]
-    [SerializeField] private float minimumMoveSpeed = 0.1f;
-    [SerializeField] private float stopDelay = 0.1f;
+    [SerializeField] private float minimumMoveSpeed = 0.1f; // Minimum horizontal speed required for audio to play
+    [SerializeField] private float stopDelay = 0.1f; // Delay audio stopping after movement stops
 
     private AudioSource footstepAudio;
     private bool isWalking;
@@ -52,6 +53,7 @@ public class PlayerFootsteps : MonoBehaviour
             return;
         }
 
+        // Removes vertical movement so that jumping and falling do not trigger the audio
         Vector3 horizontalVelocity = playerRigidbody.linearVelocity;
         horizontalVelocity.y = 0f;
 

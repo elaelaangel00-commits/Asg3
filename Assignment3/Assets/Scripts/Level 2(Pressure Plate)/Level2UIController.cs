@@ -1,6 +1,9 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+// Controls gameplay, pause, and notes
+// Pauses the game, unlocks the cursor, disables gameplay scripts, and handles transitions
+// between UI states
 public class Level2UIController : MonoBehaviour
 {
     private enum ScreenState
@@ -26,9 +29,9 @@ public class Level2UIController : MonoBehaviour
     [SerializeField] private AudioClip menuOpenClip;
     [SerializeField] private AudioClip noteOpenClip;
 
-    private ScreenState state;
-    private bool[] previousEnabledStates;
-    private float previousTimeScale = 1f;
+    private ScreenState state; // Current UI state
+    private bool[] previousEnabledStates; // Stores which scripts were enabled before a menu was opened
+    private float previousTimeScale = 1f; // Stores the previous Time.timeScale before pausing
 
     private void Start()
     {

@@ -1,5 +1,6 @@
 using UnityEngine;
 
+// Manages the pressure plate puzzle
 public class PressurePlatePuzzle : MonoBehaviour
 {
     [SerializeField] private PressurePlate[] plates;
@@ -13,17 +14,33 @@ public class PressurePlatePuzzle : MonoBehaviour
     
     private void OnEnable()
     {
+        if (plates == null)
+        {
+            return;
+        }
+
         foreach (PressurePlate plate in plates)
         {
-            plate.StateChanged += HandlePlateStateChanged;
+            if (plate != null)
+            {
+                plate.StateChanged += HandlePlateStateChanged;
+            }
         }
     }
 
     private void OnDisable()
     {
+        if (plates == null)
+        {
+            return;
+        }
+
         foreach (PressurePlate plate in plates)
         {
-            plate.StateChanged -= HandlePlateStateChanged;
+            if (plate != null)
+            {
+                plate.StateChanged -= HandlePlateStateChanged;
+            }
         }
     }
 
@@ -37,6 +54,7 @@ public class PressurePlatePuzzle : MonoBehaviour
         EvaluatePuzzle();
     }
 
+    // Checks whether each plate is occupied by one object of the correct weight
     private void EvaluatePuzzle()
     {
         if (IsSolved)
@@ -72,6 +90,7 @@ public class PressurePlatePuzzle : MonoBehaviour
 
         bool solved = allOccupied && allPlateWeightsCorrect;
 
+        // Updates the visual feedback on every plate
         foreach (PressurePlate plate in plates)
         {
             plate.SetFeedback(allOccupied, solved);
@@ -82,6 +101,7 @@ public class PressurePlatePuzzle : MonoBehaviour
             return;
         }
 
+        // Marks the puzzle as solved and notifies other scripts
         IsSolved = true;
         PuzzleSolved?.Invoke();
 

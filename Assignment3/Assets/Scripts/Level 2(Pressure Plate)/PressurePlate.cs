@@ -2,13 +2,15 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
+// Detects weighted objects on a pressure plate and tracks their total weight
+// Provides visual feedback and raises an event when its state changes
 public class PressurePlate : MonoBehaviour
 {
     [Header("Weight")]
     [SerializeField, Min(1)] private int requiredWeight = 1;
 
     [Header("Feedback Surface")]
-    [SerializeField] private Renderer plateRenderer;
+    [SerializeField] private Renderer plateRenderer; // Used the change the plate's feedback colour
 
     [Header("Feedback Colours")]
     [SerializeField] private Color neutralColor = Color.gray;
@@ -21,7 +23,7 @@ public class PressurePlate : MonoBehaviour
 
     private Material feedbackMaterial;
     private Color displayedColor;
-    private bool hasDisplayedColor;
+    private bool hasDisplayedColor; // Tracks whether a feedback colour has already been applied
 
     public int CurrentWeight { get; private set; }
     public int ObjectCount { get; private set; }
@@ -30,12 +32,14 @@ public class PressurePlate : MonoBehaviour
 
     public bool HasCorrectWeight => ObjectCount == 1 && CurrentWeight == requiredWeight;
 
+    // Event raised when the weight or object count on the plate changes
     public event Action<PressurePlate> StateChanged;
 
     private void Awake()
     {
         if (plateRenderer != null)
         {
+            // Creates an instance so that changing the colour does not affect the other plates
             feedbackMaterial = plateRenderer.material;
         }
 
@@ -95,6 +99,7 @@ public class PressurePlate : MonoBehaviour
         CurrentWeight = newWeight;
         ObjectCount = newCount;
 
+        // Notifies other scripts when the plate state has changed
         StateChanged?.Invoke(this);
     }
 

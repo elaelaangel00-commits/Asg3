@@ -1,11 +1,13 @@
 using UnityEngine;
 
+// Allows the player to pick up, carry, and place weighted objects
+// Uses a raycast at the center of the screen and checks whether the placment area is clear
 public class ObjectPickup : MonoBehaviour
 {
     [Header("References")]
-    [SerializeField] private Camera playerCamera;
+    [SerializeField] private Camera playerCamera; // Used for aiming and interaction raycasts
     [SerializeField] private Transform carryPoint;
-    [SerializeField] private Transform playerRoot;
+    [SerializeField] private Transform playerRoot; // Used to exclude the player from placement checks
 
     [Header("Pickup")]
     [SerializeField, Min(0.1f)] private float interactionRange = 3f;
@@ -52,25 +54,34 @@ public class ObjectPickup : MonoBehaviour
         }
     }
 
+    // Attempts to pick up the closest weighted object in front of the player
     private void TryPickUp()
     {
+        // Ensures physics data is up to date before raycasting
         Physics.SyncTransforms();
 
+        // Creates a ray from the center of the screen
         Ray ray = playerCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
 
+        // Finds all valid objects within the interaction range
         RaycastHit[] hits = Physics.RaycastAll(ray, interactionRange, interactionLayers, QueryTriggerInteraction.Ignore);
 
+        // Sorts hits from nearest to furthest
         System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
 
         foreach (RaycastHit hit in hits)
         {
+            // Ignore the player's Colliders
             if (BelongsToPlayer(hit.collider))
             {
                 continue;
             }
 
+            // Find the WeightedObject attached to the hit object or its parent
             WeightedObject weight = hit.collider.GetComponentInParent<WeightedObject>();
 
+
+            // Stop if the first valid hit is not a weighted object
             if (weight == null || weight.IsCarried)
             {
                 return;
@@ -94,6 +105,7 @@ public class ObjectPickup : MonoBehaviour
 
         Ray ray = playerCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
 
+        // Finds all potential placement surfaces within range
         RaycastHit[] hits = Physics.RaycastAll(ray, placementRange, placementLayers, QueryTriggerInteraction.Ignore);
 
         System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
@@ -103,11 +115,13 @@ public class ObjectPickup : MonoBehaviour
 
         foreach (RaycastHit hit in hits)
         {
+            // Ignore the player and the carried object
             if (BelongsToHeldObject(hit.collider) || BelongsToPlayer(hit.collider))
             {
                 continue;
             }
 
+            // Use the first valid surface hit
             surfaceHit = hit;
             foundSurface = true;
             break;
@@ -118,6 +132,7 @@ public class ObjectPickup : MonoBehaviour
             return;
         }
 
+        // Checks whether the surface is mostly flat and facing upward
         float upwardAmount = Vector3.Dot(surfaceHit.normal, Vector3.up);
 
         if (upwardAmount < minimumUpwardNormal)
@@ -130,13 +145,16 @@ public class ObjectPickup : MonoBehaviour
             return;
         }
 
+        // Calculates the target position so that the object rests above the surface
         Vector3 targetBoundsCenter = surfaceHit.point + Vector3.up * (heldBounds.extents.y + surfaceGap);
         Vector3 positionOffset = targetBoundsCenter - heldBounds.center;
         Vector3 targetPosition = carriedObject.transform.position + positionOffset;
 
+        // Uses a slightly smaller overlap box to avoid false positives
         Vector3 checkExtents = new Vector3(Mathf.Max(0.001f, heldBounds.extents.x - 0.005f), Mathf.Max(0.001f, heldBounds.extents.y - 0.005f), Mathf.Max(0.001f, heldBounds.extents.z - 0.005f));
         Collider[] blockers = Physics.OverlapBox(targetBoundsCenter, checkExtents, Quaternion.identity, placementLayers, QueryTriggerInteraction.Ignore);
 
+        // Checks whether another object is blocking the placement area
         foreach (Collider blocker in blockers)
         {
             if (BelongsToHeldObject(blocker))
@@ -157,8 +175,10 @@ public class ObjectPickup : MonoBehaviour
             body.position = targetPosition;
         }
 
+        // Makes the object upright and facing the player
         PlaceUprightFacingPlayer(placedObject.transform);
 
+        // Drops the object and re-enables physics
         placedObject.Drop();
         
         if (body != null && !body.isKinematic)
@@ -172,9 +192,11 @@ public class ObjectPickup : MonoBehaviour
 
     private void PlaceUprightFacingPlayer(Transform objectTransform)
     {
+        // Uses the player's forward direction flattened onto the ground plane
         Vector3 flatForward = playerCamera.transform.forward;
         flatForward.y = 0f;
 
+        // Uses a default direction if the flattened direction is too small
         if (flatForward.sqrMagnitude < 0.0001f)
         {
             flatForward = Vector3.forward;
@@ -182,9 +204,11 @@ public class ObjectPickup : MonoBehaviour
 
         flatForward.Normalize();
 
+        // Rotates the object to face the player while remaining upright
         objectTransform.rotation = Quaternion.LookRotation(flatForward, Vector3.up);
     }
 
+    // Checks whether a Collider belongs to the currently carried object
     private bool BelongsToHeldObject(Collider other)
     {
         if (carriedObject == null)
@@ -207,6 +231,7 @@ public class ObjectPickup : MonoBehaviour
         return other.transform == playerRoot || other.transform.IsChildOf(playerRoot);
     }
 
+    // Calculates the combined bounds of all active, non-trigger Colliders on the carried object
     private bool TryGetHeldBounds(out Bounds bounds)
     {
         bounds = default;
@@ -221,6 +246,7 @@ public class ObjectPickup : MonoBehaviour
                 continue;
             }
 
+            // Use the first valid Collider's bounds
             if (!foundCollider)
             {
                 bounds = objectCollider.bounds;
@@ -228,6 +254,7 @@ public class ObjectPickup : MonoBehaviour
             }
             else
             {
+                // Combine bounds from multiple Colliders
                 bounds.Encapsulate(objectCollider.bounds);
             }
         }
