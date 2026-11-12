@@ -1,42 +1,42 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-// Runs the whole circuit room: activates sections in order, lights up the power box,
-// makes the exit door appear, keeps the objective UI up to date, and loads the next
-// scene when the player looks at the door and presses E.
+// Activates sections in order, lights up the power box,
+// scene change when the player looks at the end door and presses E.
 public class RoomManager : MonoBehaviour
 {
     [Header("Sections (in order)")]
     public WireSection[] sections;
 
     [Header("Power box beside the door")]
-    public Renderer[] powerLights;          // one light per section, same order
+    public Renderer[] powerLights; // one light per section, same order
     public Material lightOffMaterial;
     public Material lightOnMaterial;
 
     [Header("Exit door")]
-    public GameObject exitDoor;             // hidden at the start, appears when all sections are powered
-    public string nextSceneName = "Level 4";  // must match the scene name in Build Profiles / Build Settings
+    public GameObject exitDoor;
+    public string nextSceneName = "Level4";
     public KeyCode interactKey = KeyCode.E;
-    public float interactRange = 2.5f;      // how far away you can press E on the door
-    public string doorPrompt = "Open door";   // shown under the crosshair when looking at the door
+    public float interactRange = 2.5f;
+    public string doorPrompt = "Open door to the next room";
 
-    int current;                            // index of the active section
+    int current;
     bool doorOpen;
     bool loading;
 
     void Start()
     {
-        foreach (WireSection s in sections)
+        for (int i = 0; i < sections.Length; i++)
         {
-            s.Changed += OnSectionChanged;
-            s.Completed += OnSectionCompleted;
+            sections[i].Index = i;   // section number
+            sections[i].Changed += OnSectionChanged;
+            sections[i].Completed += OnSectionCompleted;
         }
         foreach (Renderer r in powerLights) r.sharedMaterial = lightOffMaterial;
 
         if (exitDoor != null)
         {
-            exitDoor.SetActive(false);   // door only appears once the room is solved
+            exitDoor.SetActive(false);
         }
 
         ActivateSection(0);
@@ -64,7 +64,6 @@ public class RoomManager : MonoBehaviour
         }
     }
 
-    // Runs after every Update, so this prompt wins over PlayerWireHand's prompt
     void LateUpdate()
     {
         if (!doorOpen || loading || Level3UIManager.IsPaused || Level3UIManager.Instance == null) return;
@@ -87,8 +86,17 @@ public class RoomManager : MonoBehaviour
     {
         int index = System.Array.IndexOf(sections, s);
 
-        if (index < powerLights.Length) powerLights[index].sharedMaterial = lightOnMaterial;
-        Level3AudioManager.SectionPowered();
+        Level3AudioManager audio = Level3AudioManager.Instance;
+
+        if (index < powerLights.Length)
+        {
+            powerLights[index].sharedMaterial = lightOnMaterial;
+            audio?.PlaySFXAt(audio.SectionPowered, powerLights[index].transform.position);
+        }
+
+        if (s.gateToOpen != null)
+            audio?.PlaySFXAt(audio.GateOpens != null ? audio.GateOpens : audio.SectionPowered, s.gateToOpen.transform.position);
+
         Level3UIManager.Message("Section " + (index + 1) + " powered!", Color.green);
 
         if (index + 1 < sections.Length) ActivateSection(index + 1);
@@ -101,14 +109,17 @@ public class RoomManager : MonoBehaviour
     {
         current = sections.Length;
         doorOpen = true;
-        if (exitDoor != null) exitDoor.SetActive(true);
-        Level3AudioManager.DoorAppear();
+        if (exitDoor != null)
+        {
+            exitDoor.SetActive(true);
+            Level3AudioManager.Instance?.PlaySFXAt(Level3AudioManager.Instance.DoorAppears, exitDoor.transform.position);
+        }
         Level3UIManager.Message("All power restored! The exit door has appeared", Color.green, 3f);
         RefreshUI();
     }
 
-    // Is the crosshair on the door, within range?
-    bool LookingAtDoor()
+
+    bool LookingAtDoor() // Is the crosshair within range from door?
     {
         if (exitDoor == null) return false;
 

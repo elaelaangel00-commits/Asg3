@@ -43,8 +43,8 @@ public class Wire : MonoBehaviour
 
     class Span
     {
-        public Vector3[] pos;    // current point positions
-        public Vector3[] prev;   // positions last frame (velocity = pos - prev)
+        public Vector3[] pos;   
+        public Vector3[] prev;  
         public float lockedLength = -1f;   // > 0 = this span's length is fixed (it no longer pays out)
 
         public Span(int points, Vector3 start)
@@ -82,8 +82,6 @@ public class Wire : MonoBehaviour
         spans.Add(new Span(segmentsPerSpan + 1, source.TopPoint));
     }
 
-    // Colours a material with the wire's colour, and makes it glow in that colour.
-    // Works for both URP Unlit (bright HDR base colour) and URP Lit (emission).
     void Tint(Material m)
     {
         if (!glow)
@@ -92,17 +90,17 @@ public class Wire : MonoBehaviour
             return;
         }
 
-        Color hdr = colour * glowIntensity;   // values above 1 are what Bloom picks up
+        Color hdr = colour * glowIntensity;  
         hdr.a = 1f;
 
-        if (m.HasProperty("_EmissionColor"))  // Lit material: normal colour + glowing emission
+        if (m.HasProperty("_EmissionColor"))  
         {
             m.color = colour;
             m.EnableKeyword("_EMISSION");
             m.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
             m.SetColor("_EmissionColor", hdr);
         }
-        else                                  // Unlit material: just make the colour extra bright
+        else                                  
         {
             m.color = hdr;
         }
@@ -132,8 +130,7 @@ public class Wire : MonoBehaviour
         return true;
     }
 
-    // Fix a span's length at (straight distance x connectedSlack)
-    void LockSpan(int s)
+    void LockSpan(int s) // Fix a span's length, to prevent it to overgrow, glitch up to ceiling
     {
         SpanEnds(s, out Vector3 a, out Vector3 b);
         spans[s].lockedLength = Mathf.Max(Vector3.Distance(a, b) * connectedSlack, minLength);
@@ -160,7 +157,6 @@ public class Wire : MonoBehaviour
 
     // ---------------- plug ----------------
 
-    // Plug sits in the bottom-right of the screen by parenting it to the camera
     public void HoldInHand(Transform cam, Vector3 localOffset, float scale)
     {
         plug.SetParent(cam, false);
@@ -169,8 +165,7 @@ public class Wire : MonoBehaviour
         plug.localScale = plugScale * scale;
     }
 
-    // Plug sits on top of the socket
-    public void PlugInto(WireNode socket)
+    public void PlugInto(WireNode socket) // Plug sits on top of the socket
     {
         plug.SetParent(transform, false);
         plug.localScale = plugScale;
@@ -207,7 +202,6 @@ public class Wire : MonoBehaviour
         ropeLength = Mathf.Max(ropeLength, straight);             // never shorter than the gap (avoids fighting/jitter)
         float segLength = ropeLength / n;
 
-        // 1. Verlet step: keep moving the way it was moving, plus gravity
         Vector3 gravity = Physics.gravity * dt * dt;
         for (int i = 1; i < n; i++)
         {
@@ -216,7 +210,6 @@ public class Wire : MonoBehaviour
             pos[i] += velocity + gravity;
         }
 
-        // 2. Constraints: pin the ends, keep each segment at segLength
         for (int k = 0; k < iterations; k++)
         {
             pos[0] = a;
@@ -239,7 +232,6 @@ public class Wire : MonoBehaviour
             }
         }
 
-        // 3. Floor collision: don't let points sink below the ground / platforms
         for (int i = 1; i < n; i++)
         {
             if (Physics.Raycast(pos[i] + Vector3.up * 0.5f, Vector3.down, out RaycastHit hit,
@@ -254,8 +246,6 @@ public class Wire : MonoBehaviour
             }
         }
 
-        // 4. Safety: a hanging wire can never rise above its higher end, and a broken
-        //    simulation (NaN) snaps back to a straight line instead of flying off
         float maxY = Mathf.Max(a.y, b.y) + 0.05f;
         for (int i = 1; i < n; i++)
         {
@@ -284,7 +274,6 @@ public class Wire : MonoBehaviour
 
     void OnDestroy()
     {
-        // the plug may be parented to the camera, so clean it up separately (coils are children, so they go too)
         if (plug != null) Destroy(plug.gameObject);
     }
 }

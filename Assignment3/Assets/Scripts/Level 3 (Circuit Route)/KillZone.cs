@@ -1,12 +1,9 @@
 using UnityEngine;
 
-// Section 3 obby: put this on a big trigger box under the platforms (the water).
-// Falling in drops the plug you're holding (the wire goes back to its source)
-// and sends you back to the start of the section. Wires already plugged in stay connected.
 [RequireComponent(typeof(Collider))]
 public class KillZone : MonoBehaviour
 {
-    public Transform sectionStart;   // where the player respawns (S3_Start)
+    public Transform sectionStart; // respawn spot
 
     void Reset()
     {
@@ -18,9 +15,11 @@ public class KillZone : MonoBehaviour
         PlayerWireHand hand = other.GetComponentInParent<PlayerWireHand>();
         if (hand == null || sectionStart == null) return;
 
+        Level3AudioManager.Instance?.PlaySFX(Level3AudioManager.Instance.Fall);  
+       
         hand.DropHeldPlug();
-        Level3AudioManager.Fall();
         Teleport(hand.transform, sectionStart.position);
+        Level3AudioManager.Instance?.PlaySFX(Level3AudioManager.Instance.ReturnWire);
         Level3UIManager.Message("You fell! The wire went back to its source", Color.yellow);
     }
 

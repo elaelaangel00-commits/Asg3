@@ -1,71 +1,75 @@
 using UnityEngine;
 
-// One place for every sound in the circuit room. Put this on an empty GameObject
-// called "AudioManager" and drag all the clips in. Any clip left empty is simply skipped.
-//
-// Other scripts just call e.g. CircuitAudio.Connect(position);
-//  - 3D sounds play at a position in the world (they get quieter with distance)
-//  - 2D sounds play at the same volume wherever the player is
 public class Level3AudioManager : MonoBehaviour
 {
-    public static Level3AudioManager Instance { get; private set; }
+    public static Level3AudioManager Instance;
 
-    [Header("Background music (non-diegetic, 2D, loops)")]
-    public AudioClip music;
-    [Range(0f, 1f)] public float musicVolume = 0.35f;
+    [Header("Sources")]
+    public AudioSource MusicSource;     
+    public AudioSource SfxSource;
+    public AudioSource PlayerMovement;
+    public AudioSource AmbienceSource;
+    public AudioSource MachineHumSource;
 
-    [Header("Power box hum (diegetic, 3D, loops)")]
-    public AudioClip hum;
-    public Transform humSource;              // drag the PowerBox here
-    [Range(0f, 1f)] public float humVolume = 0.6f;
-    public float humMaxDistance = 15f;
+    [Header("Music")]
+    public AudioClip Level3BGM;
+    [Range(0f, 1f)] public float musicVolume = 0.3f;
 
-    [Header("Wire sounds (3D, played at the object)")]
-    public AudioClip grab;                   // picking up a plug at a source
-    public AudioClip connect;                // plug goes into the right socket
-    public AudioClip wrong;                  // wrong socket spark / zap
-    public AudioClip shortCircuit;           // Section 2: wrong socket resets everything
-    public AudioClip wrap;                   // wire wrapped around a rod
-    public AudioClip unwrap;                 // last rod unwrapped
+    [Header("Ambience")]
+    public AudioClip Ambience;
+    [Range(0f, 1f)] public float ambienceVolume = 0.4f;
+    public AudioClip MachineHum;
+    [Range(0f, 1f)] public float machineHumVolume = 0.6f;
 
-    [Header("Feedback sounds (2D)")]
-    public AudioClip drop;                   // plug dropped, wire returns to source
-    public AudioClip fall;                   // fell into the water
-    public AudioClip sectionPowered;         // a power box light turns on
-    public AudioClip doorAppear;             // exit door appears
+    [Header("Player SFX (2D)")]
+    public AudioClip PlayerWalk;
+    public AudioClip PlayerJump;
+    public AudioClip Fall;
+
+    [Header("Wire SFX (2D)")]
+    public AudioClip Grab;
+    public AudioClip Connect;
+    public AudioClip Wrong;
+    public AudioClip Wrap;
+    public AudioClip Unwrap;
+    public AudioClip ReturnWire;
+
+    [Header("World SFX (3D)")]
+    public AudioClip ShortCircuit;
+    public AudioClip SectionPowered; 
+    public AudioClip GateOpens;        
+    public AudioClip DoorAppears;
 
     [Header("Volume")]
     [Range(0f, 1f)] public float sfxVolume = 1f;
-    public float sfxMaxDistance = 20f;
+    [Range(0f, 1f)] public float walkVolume = 0.5f;
+    public float sfxMaxDistance = 30f;
 
-    AudioSource musicSource;
-    AudioSource sfx2D;
+    [Header("Player detection")]
+    public bool needGroundForWalk = true; 
+    public float jumpSoundCooldown = 0.3f;  
+
+    PlayerMovement player;
+    float lastJumpSound = -10f;
 
     void Awake()
     {
         Instance = this;
 
-        musicSource = gameObject.AddComponent<AudioSource>();
-        musicSource.loop = true;
-        musicSource.spatialBlend = 0f;
-        musicSource.volume = musicVolume;
-        if (music != null) { musicSource.clip = music; musicSource.Play(); }
+        if (SfxSource == null) Debug.LogError("Level3AudioManager: drag an AudioSource into 'Sfx Source'.", this);
+        else SfxSource.volume = 1f;   
+        PlayMusic();
+        PlayAmbience();
+        PlayMachineHum();
+    }
 
-        sfx2D = gameObject.AddComponent<AudioSource>();
-        sfx2D.spatialBlend = 0f;
-
-        if (hum != null && humSource != null)
-        {
-            AudioSource h = humSource.gameObject.AddComponent<AudioSource>();
-            h.clip = hum;
-            h.loop = true;
-            h.volume = humVolume;
-            h.spatialBlend = 1f;
-            h.rolloffMode = AudioRolloffMode.Linear;
-            h.minDistance = 1f;
-            h.maxDistance = humMaxDistance;
-            h.Play();
-        }
+    void Start()
+    {
+        player = FindFirstObjectByType<PlayerMovement>();
+        if (player == null) Debug.LogWarning("Level3AudioManager: no PlayerMovement found in the scene - walk/jump sounds won't play.", this);
+        if (PlayerMovement == null) Debug.LogWarning("Level3AudioManager: 'Player Movement' AudioSource is empty - walk sound won't play.", this);
+        if (PlayerWalk == null) Debug.LogWarning("Level3AudioManager: 'Player Walk' clip is empty.", this);
+        if (PlayerJump == null) Debug.LogWarning("Level3AudioManager: 'Player Jump' clip is empty.", this);
     }
 
     void OnDestroy()
@@ -73,44 +77,112 @@ public class Level3AudioManager : MonoBehaviour
         if (Instance == this) Instance = null;
     }
 
-    // ---------------- calls used by the other scripts ----------------
-
-    public static void Grab(Vector3 at) => At(Instance?.grab, at);
-    public static void Connect(Vector3 at) => At(Instance?.connect, at);
-    public static void Wrong(Vector3 at) => At(Instance?.wrong, at);
-    public static void ShortCircuit(Vector3 at) => At(Instance?.shortCircuit, at);
-    public static void Wrap(Vector3 at) => At(Instance?.wrap, at);
-    public static void Unwrap(Vector3 at) => At(Instance?.unwrap, at);
-
-    public static void Drop() => Flat(Instance?.drop);
-    public static void Fall() => Flat(Instance?.fall);
-    public static void SectionPowered() => Flat(Instance?.sectionPowered);
-    public static void DoorAppear() => Flat(Instance?.doorAppear);
-
-    // ---------------- helpers ----------------
-
-    // 3D one-shot: a temporary AudioSource at that position, removed when the clip ends
-    static void At(AudioClip clip, Vector3 position)
+    void Update()
     {
-        if (Instance == null || clip == null) return;
+        if (player == null) return;
+        if (Level3UIManager.IsPaused)
+        {
+            PlayerMoves(false);
+            return;
+        }
+
+        bool grounded = player.IsGrounded;
+
+        // jump
+        if (Input.GetKeyDown(player.jumpkey) && grounded && Time.time - lastJumpSound > jumpSoundCooldown)
+        {
+            PlaySFX(PlayerJump);
+            lastJumpSound = Time.time;
+        }
+
+        // walk
+        bool pressingMove = Input.GetAxisRaw("Horizontal") != 0f || Input.GetAxisRaw("Vertical") != 0f;
+        PlayerMoves(pressingMove && (grounded || !needGroundForWalk));
+    }
+
+    // ---------- MUSIC ----------
+    public void PlayMusic()
+    {
+        if (Level3BGM == null || MusicSource == null) return;
+
+        MusicSource.clip = Level3BGM;
+        MusicSource.loop = true;
+        MusicSource.spatialBlend = 0f;
+        MusicSource.volume = musicVolume;
+        MusicSource.Play();
+    }
+
+    // ---------- AMBIENCE ----------
+    public void PlayAmbience()
+    {
+        if (Ambience == null || AmbienceSource == null) return;
+
+        AmbienceSource.clip = Ambience;
+        AmbienceSource.loop = true;
+        AmbienceSource.spatialBlend = 0f;
+        AmbienceSource.volume = ambienceVolume;
+        AmbienceSource.Play();
+    }
+
+    public void PlayMachineHum()
+    {
+        if (MachineHum == null || MachineHumSource == null) return;
+
+        MachineHumSource.clip = MachineHum;
+        MachineHumSource.loop = true;
+        MachineHumSource.spatialBlend = 1f;
+        MachineHumSource.rolloffMode = AudioRolloffMode.Linear;
+        MachineHumSource.minDistance = 1f;
+        MachineHumSource.maxDistance = 15f;
+        MachineHumSource.volume = machineHumVolume;
+        MachineHumSource.Play();
+    }
+
+    // ---------- SFX ----------
+    public void PlaySFX(AudioClip clip)
+    {
+        if (clip != null && SfxSource != null) SfxSource.PlayOneShot(clip, sfxVolume);
+    }
+
+    public void PlaySFXAt(AudioClip clip, Vector3 position)
+    {
+        if (clip == null) return;
 
         GameObject go = new GameObject("SFX_" + clip.name);
         go.transform.position = position;
         AudioSource src = go.AddComponent<AudioSource>();
         src.clip = clip;
-        src.volume = Instance.sfxVolume;
+        src.volume = sfxVolume;
         src.spatialBlend = 1f;
         src.rolloffMode = AudioRolloffMode.Linear;
         src.minDistance = 1f;
-        src.maxDistance = Instance.sfxMaxDistance;
+        src.maxDistance = sfxMaxDistance;
         src.Play();
         Destroy(go, clip.length + 0.1f);
     }
 
-    // 2D one-shot: same volume everywhere
-    static void Flat(AudioClip clip)
+    public void PlayerMoves(bool moving)
     {
-        if (Instance == null || clip == null) return;
-        Instance.sfx2D.PlayOneShot(clip, Instance.sfxVolume);
+        if (PlayerMovement == null) return;
+
+        if (!moving)
+        {
+            if (PlayerMovement.isPlaying) PlayerMovement.Stop();
+            return;
+        }
+
+        if (PlayerWalk == null) return;
+
+        if (PlayerMovement.clip != PlayerWalk)
+        {
+            PlayerMovement.clip = PlayerWalk;
+            PlayerMovement.loop = true;
+            PlayerMovement.volume = walkVolume;
+            PlayerMovement.Play();
+        }
+        else if (!PlayerMovement.isPlaying)
+        {
+            PlayerMovement.Play();
+        }
     }
 }

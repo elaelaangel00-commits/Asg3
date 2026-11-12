@@ -3,25 +3,23 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-// Put this on your Canvas (or UIControllers). Shows the objective, progress, interaction
-// prompt and short pop-up messages, and runs the pause menu (Esc).
 public class Level3UIManager : MonoBehaviour
 {
     public static Level3UIManager Instance { get; private set; }
-    public static bool IsPaused { get; private set; }   // other scripts check this
+    public static bool IsPaused { get; private set; } 
 
     [Header("HUD")]
-    public GameObject hud;           // optional: hidden while paused
-    public TMP_Text objectiveText;   // top-left: what to do
-    public TMP_Text progressText;    // under it: Power 1/3, Wires 2/5
-    public TMP_Text promptText;      // under the crosshair: [E] Grab plug
-    public TMP_Text messageText;     // centre: Wrong socket! / Section powered!
+    public GameObject hud;           
+    public TMP_Text objectiveText;   
+    public TMP_Text progressText;   
+    public TMP_Text promptText;      
+    public TMP_Text messageText;    
 
     [Header("Pause menu")]
-    public GameObject pausePanel;    // PausePanel
-    public Button resumeButton;      // ResumeBtn
-    public Button mainMenuButton;    // MainMenuBtn
-    public string startMenuScene = "StartMenuScene";   // must match the scene name exactly
+    public GameObject pausePanel;    
+    public Button resumeButton;    
+    public Button mainMenuButton;    
+    public string startMenuScene = "StartMenuScene";  
     public KeyCode pauseKey = KeyCode.Escape;
 
     float messageTimer;
@@ -37,14 +35,13 @@ public class Level3UIManager : MonoBehaviour
     {
         if (resumeButton != null) resumeButton.onClick.AddListener(Resume);
         if (mainMenuButton != null) mainMenuButton.onClick.AddListener(GoToMainMenu);
-        Resume();   // always start unpaused, with the panel hidden
+        Resume(); 
     }
 
     void OnDestroy()
     {
         if (Instance == this) Instance = null;
 
-        // safety: never leave the game frozen when this scene unloads
         IsPaused = false;
         Time.timeScale = 1f;
         AudioListener.pause = false;
@@ -76,7 +73,6 @@ public class Level3UIManager : MonoBehaviour
         if (promptText != null && promptText.text != text) promptText.text = text;
     }
 
-    // Call from anywhere: CircuitUI.Message("Wrong socket!", Color.red);
     public static void Message(string text, Color colour, float duration = 2f)
     {
         if (Instance == null || Instance.messageText == null) return;
@@ -90,8 +86,8 @@ public class Level3UIManager : MonoBehaviour
     public void Pause()
     {
         IsPaused = true;
-        Time.timeScale = 0f;              // stops physics, movement and anything using deltaTime
-        AudioListener.pause = true;       // pauses all sounds
+        Time.timeScale = 0f; // stops physics, movement
+        AudioListener.pause = true;       
 
         if (pausePanel != null) pausePanel.SetActive(true);
         if (hud != null) hud.SetActive(false);
@@ -115,7 +111,6 @@ public class Level3UIManager : MonoBehaviour
 
     public void GoToMainMenu()
     {
-        // undo the pause first, otherwise the main menu would load frozen and silent
         IsPaused = false;
         Time.timeScale = 1f;
         AudioListener.pause = false;

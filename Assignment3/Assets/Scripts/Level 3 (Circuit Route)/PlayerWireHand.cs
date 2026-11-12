@@ -1,7 +1,5 @@
 using UnityEngine;
 
-// Put this on the Player (the root object that moves). Handles looking at things
-// (raycast from the crosshair), grabbing plugs, wrapping wires on rods, inserting and dropping.
 public class PlayerWireHand : MonoBehaviour
 {
     [Header("Setup")]
@@ -10,24 +8,23 @@ public class PlayerWireHand : MonoBehaviour
     public Wire wirePrefab;
 
     [Header("Controls")]
-    public KeyCode interactKey = KeyCode.E;   // grab / wrap around rod / insert
-    public KeyCode undoKey = KeyCode.R;       // unwrap the last rod
-    public KeyCode dropKey = KeyCode.Q;       // drop the plug (wire goes back to the source)
+    public KeyCode interactKey = KeyCode.E;
+    public KeyCode undoKey = KeyCode.R;
+    public KeyCode dropKey = KeyCode.Q;
 
     [Header("Interaction")]
     public float interactRange = 2.5f;
-    public LayerMask interactMask = ~0;       // everything except the Player layer
+    public LayerMask interactMask = ~0;
 
     [Header("Held plug")]
-    public Vector3 heldOffset = new Vector3(0.35f, -0.3f, 0.8f);   // bottom-right of the screen
+    public Vector3 heldOffset = new Vector3(0.35f, -0.3f, 0.8f);
     public float heldScale = 0.5f;
 
     Wire held;
 
-    // Used by KillZone: falling drops whatever plug you're holding (it goes back to its source)
-    public void DropHeldPlug()
+    public void DropHeldPlug() // Used by KillZone, falling drops whatever plug you're holding (it goes back to its source)
     {
-        if (held != null) Drop();
+        if (held != null) Drop(); // plays the Return Wire sound too, on top of the splash
     }
 
     void Start()
@@ -38,7 +35,7 @@ public class PlayerWireHand : MonoBehaviour
 
     void Update()
     {
-        if (Level3UIManager.IsPaused) return;   // no grabbing / inserting while paused
+        if (Level3UIManager.IsPaused) return;
 
         Collider looked = LookAt();
         WireNode node = looked != null ? looked.GetComponentInParent<WireNode>() : null;
@@ -50,7 +47,7 @@ public class PlayerWireHand : MonoBehaviour
             if (Input.GetKeyDown(dropKey)) { Drop(); return; }
             if (Input.GetKeyDown(undoKey) && held.UndoLastRod())
             {
-                Level3AudioManager.Unwrap(transform.position);
+                Level3AudioManager.Instance?.PlaySFX(Level3AudioManager.Instance.Unwrap);
                 Level3UIManager.Message("Unwrapped the last rod", Color.white);
                 return;
             }
@@ -66,8 +63,8 @@ public class PlayerWireHand : MonoBehaviour
         else if (node != null && !node.isSource) Insert(node);
     }
 
-    // What the crosshair is pointing at, within range
-    Collider LookAt()
+
+    Collider LookAt() // What the crosshair is pointing at, within range
     {
         if (playerCamera == null) return null;
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
@@ -82,13 +79,13 @@ public class PlayerWireHand : MonoBehaviour
         if (!section.IsActive) { Level3UIManager.Message("No power to this section yet", Color.yellow); return; }
         if (section.IsComplete) { Level3UIManager.Message("This section is already powered", Color.yellow); return; }
 
-        if (source.wire != null) section.Unplug(source);   // redo a connected wire
+        if (source.wire != null) section.Unplug(source); // redo a connected wire
 
         held = Instantiate(wirePrefab);
         held.Init(source);
         held.HoldInHand(playerCamera.transform, heldOffset, heldScale);
         source.wire = held;
-        Level3AudioManager.Grab(source.TopPoint);
+        Level3AudioManager.Instance?.PlaySFX(Level3AudioManager.Instance.Grab);
     }
 
     void Wrap(WireRod rod)
@@ -106,7 +103,7 @@ public class PlayerWireHand : MonoBehaviour
         }
 
         held.Wrap(rod);
-        Level3AudioManager.Wrap(rod.WrapPoint);
+        Level3AudioManager.Instance?.PlaySFX(Level3AudioManager.Instance.Wrap);
         int done = 0;
         foreach (WireRod r in needed) if (held.HasRod(r)) done++;
         Level3UIManager.Message("Wire wrapped (" + done + "/" + needed.Length + " rods)", Color.green);
@@ -118,14 +115,13 @@ public class PlayerWireHand : MonoBehaviour
         if (socket.section != held.Source.section) { Level3UIManager.Message("This wire doesn't reach that circuit", Color.yellow); return; }
 
         if (socket.section.TryConnect(held, socket)) held = null;
-        // if it was wrong and the section reset, the wire is destroyed and 'held' becomes null next frame
     }
 
-    void Drop()
+    void Drop(bool playSound = true)
     {
         held.Source.section.Unplug(held.Source);
         held = null;
-        Level3AudioManager.Drop();
+        if (playSound) Level3AudioManager.Instance?.PlaySFX(Level3AudioManager.Instance.ReturnWire);
     }
 
     void UpdatePrompt(WireNode node, WireRod rod)
@@ -136,15 +132,15 @@ public class PlayerWireHand : MonoBehaviour
         if (held == null)
         {
             if (node != null && node.isSource)
-                text = node.connected ? "\n[" + interactKey + "] Unplug and redo" : "\n[" + interactKey + "] Grab plug";
+                text = node.connected ? "[" + interactKey + "] Unplug and redo" : "[" + interactKey + "] Grab plug";
         }
         else
         {
-            text = "\n[" + dropKey + "] Drop plug";
-            if (held.LastRod != null) text = "[" + undoKey + "] Unwrap last rod    " + text;
+            text = "[" + dropKey + "] Drop plug";
+            if (held.LastRod != null) text = "[" + undoKey + "] Unwrap last rod\n" + text;
 
-            if (rod != null) text = "\n[" + interactKey + "] Wrap wire around rod    " + text;
-            else if (node != null && !node.isSource) text = "\n[" + interactKey + "] Insert plug    " + text;
+            if (rod != null) text = "[" + interactKey + "] Wrap wire around rod\n" + text;
+            else if (node != null && !node.isSource) text = "[" + interactKey + "] Insert plug\n" + text;
         }
 
         Level3UIManager.Instance.SetPrompt(text);

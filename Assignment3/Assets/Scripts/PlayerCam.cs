@@ -1,4 +1,3 @@
-
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -20,6 +19,10 @@ public class PlayerCam : MonoBehaviour
 
     private void Update()
     {
+        // Game is paused (timeScale = 0): don't turn the camera
+        if (Time.timeScale == 0f) return;
+        if (Mouse.current == null) return;
+
         // Get mouse input using Unity 6 Input System
         Vector2 mouseInput = Mouse.current.delta.ReadValue();
 

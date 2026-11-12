@@ -2,27 +2,26 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-// One area of the circuit room. Put this on an empty GameObject and make all of that
-// section's sources, sockets and decoy sockets its CHILDREN - they are found automatically.
 public class WireSection : MonoBehaviour
 {
     [Header("Info")]
-    [TextArea] public string objective = "Objective: Connect the matching coloured wires";
+    [TextArea] public string objective = "Connect the matching coloured wires";
 
     [Header("Rules")]
-    public bool resetOnWrongSocket = false;   // wrong socket = short circuit, every plug in this section pops out
+    public bool resetOnWrongSocket = false;
 
     [Header("When complete")]
-    public GameObject gateToOpen;             // shutter/wall blocking the next section (gets disabled)
+    public GameObject gateToOpen;
 
     [Header("Feedback (optional)")]
-    public ParticleSystem sparkPrefab;        // sounds are in CircuitAudio
+    public ParticleSystem sparkPrefab; 
 
-    public event Action<WireSection> Changed;     // progress changed
-    public event Action<WireSection> Completed;   // every pair connected
+    public event Action<WireSection> Changed; // progress changed
+    public event Action<WireSection> Completed; // every pair connected
 
-    public bool IsActive { get; set; }            // set by CircuitRoomManager
+    public bool IsActive { get; set; }
     public bool IsComplete { get; private set; }
+    public int Index { get; set; } // 0 = Section 1, 1 = Section 2, 2 = Section 3 (set by RoomManager)
 
     public int Total => sources.Count;
     public int ConnectedCount
@@ -51,8 +50,8 @@ public class WireSection : MonoBehaviour
         }
     }
 
-    // Returns true if the plug went in
-    public bool TryConnect(Wire wire, WireNode socket)
+
+    public bool TryConnect(Wire wire, WireNode socket) // Returns true if the plug went in
     {
         WireNode source = wire.Source;
 
@@ -68,24 +67,30 @@ public class WireSection : MonoBehaviour
             wire.PlugInto(socket);
             source.connected = true;
             socket.connected = true;
-            Level3AudioManager.Connect(socket.TopPoint);
+            Level3AudioManager.Instance?.PlaySFX(Level3AudioManager.Instance.Connect);
             Changed?.Invoke(this);
 
             if (ConnectedCount == Total) Complete();
             return true;
         }
 
-        // wrong socket (includes decoys)
+        // wrong socket
         if (sparkPrefab != null) Instantiate(sparkPrefab, socket.TopPoint, Quaternion.identity);
+
+        // Section 1 = Wrong audio, every other section = Short Circuit audio
+        if (Index == 0)
+            Level3AudioManager.Instance?.PlaySFX(Level3AudioManager.Instance.Wrong);
+        else
+            Level3AudioManager.Instance?.PlaySFXAt(Level3AudioManager.Instance.ShortCircuit, socket.TopPoint);
+
+
         if (resetOnWrongSocket)
         {
-            Level3AudioManager.ShortCircuit(socket.TopPoint);
             ResetSection();
             Level3UIManager.Message("Short circuit! Section reset", Color.red);
         }
         else
         {
-            Level3AudioManager.Wrong(socket.TopPoint);
             Level3UIManager.Message("Wrong socket!", Color.red);
         }
         return false;
