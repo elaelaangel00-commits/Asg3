@@ -163,14 +163,22 @@ MonoBehaviour:
   minLength: 0.3
   damping: 0.98
   iterations: 15
+  maxLength: 10
+  connectedSlack: 1.05
   floorMask:
     serializedVersion: 2
     m_Bits: 64
   thickness: 0.03
+  collideWithObstacles: 1
+  obstacleMask:
+    serializedVersion: 2
+    m_Bits: 255
+  collisionRadius: 0.05
+  collisionEvery: 3
   coilHeight: 0.08
-  coilThickness: 0.02
+  coilThickness: 0.04
   glow: 1
-  glowIntensity: 2.5
+  glowIntensity: 2
 --- !u!1 &5397406054575604555
 GameObject:
   m_ObjectHideFlags: 0

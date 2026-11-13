@@ -1,51 +1,50 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// A realistic hanging wire using Verlet rope simulation.
-// The rope is made of "spans": the piece between the source and the first rod,
-// between each pair of rods, and from the last rod to the plug. Each span is a
-// chain of points: gravity pulls them down, then neighbouring points are pulled
-// back to the right distance apart, with both ends of the span pinned.
-// Span length grows with distance, so the wire pays out and droops naturally.
-// The LineRenderer only DRAWS the points - the movement comes from the simulation.
 [RequireComponent(typeof(LineRenderer))]
 public class Wire : MonoBehaviour
 {
     [Header("Parts")]
-    public Transform plug;                 // child cylinder (no collider)
+    public Transform plug;             
     public Renderer plugRenderer;
 
     [Header("Rope")]
-    public int segmentsPerSpan = 16;       // more = smoother but more work
-    public float slack = 1.2f;             // 1 = tight, higher = longer rope = more droop
+    public int segmentsPerSpan = 16; //rope smoothness
+    public float slack = 1.2f; //rope tightness
     public float minLength = 0.3f;
-    [Range(0.9f, 1f)] public float damping = 0.98f;   // lower = settles faster, less swing
-    public int iterations = 15;            // more = stiffer, less stretchy rope
+    [Range(0.9f, 1f)] public float damping = 0.98f; //rope gravity
+    public int iterations = 15;//rope stiffness, less stretchy rope
 
     [Header("Length limits")]
-    public float maxLength = 10f;          // while carrying: the wire never gets longer than this per span (it goes taut instead)
-    public float connectedSlack = 1.05f;   // once plugged in / wrapped: length is FIXED at straight distance x this (a little loose)
+    public float maxLength = 10f;          
+    public float connectedSlack = 1.05f; //once connected, rope loose by this much
 
     [Header("Floor collision")]
-    public LayerMask floorMask = ~0;       // set to your environment layer - NOT the Player layer
+    public LayerMask floorMask = ~0;
     public float thickness = 0.03f;
 
-    [Header("Wrap coil (visual ring on the rod)")]
+    [Header("Obstacle collision")]
+    public bool collideWithObstacles = true;
+    public LayerMask obstacleMask = ~0;  
+    public float collisionRadius = 0.05f;  
+    [Range(1, 10)] public int collisionEvery = 3; // check obstacles 
+
+    [Header("Wrap coil")]
     public float coilHeight = 0.08f;
     public float coilThickness = 0.02f;
 
-    [Header("Glow (needs Bloom on the camera)")]
+    [Header("Wire Glow")]
     public bool glow = true;
-    [Range(0f, 10f)] public float glowIntensity = 2.5f;   // higher = brighter glow
+    [Range(0f, 10f)] public float glowIntensity = 2.5f; 
 
     public WireNode Source { get; private set; }
     public WireRod LastRod => rods.Count > 0 ? rods[rods.Count - 1] : null;
 
     class Span
     {
-        public Vector3[] pos;   
-        public Vector3[] prev;  
-        public float lockedLength = -1f;   // > 0 = this span's length is fixed (it no longer pays out)
+        public Vector3[] pos; //current point positions
+        public Vector3[] prev;//positions last frame (velocity = pos - prev)
+        public float lockedLength = -1f;
 
         public Span(int points, Vector3 start)
         {
@@ -55,12 +54,16 @@ public class Wire : MonoBehaviour
         }
     }
 
-    readonly List<Span> spans = new List<Span>();     // always rods.Count + 1 spans
+    readonly List<Span> spans = new List<Span>(); // always rods.Count + 1 span
     readonly List<WireRod> rods = new List<WireRod>();
     readonly List<GameObject> coils = new List<GameObject>();
     LineRenderer lr;
     Vector3 plugScale;
-    Color colour;   // copied from the source cylinder's material
+    Color colour; // copies plug's colour material
+
+    static SphereCollider probe;
+    static readonly Collider[] overlaps = new Collider[8];
+    static readonly Dictionary<Collider, bool> ignoreCache = new Dictionary<Collider, bool>();
 
     public void Init(WireNode source)
     {
@@ -68,11 +71,8 @@ public class Wire : MonoBehaviour
         lr = GetComponent<LineRenderer>();
         lr.useWorldSpace = true;
 
-        // the wire and plug are visual only: remove any collider so the plug
-        // (which follows the camera) can't push or trap the player
         foreach (Collider col in GetComponentsInChildren<Collider>(true)) Destroy(col);
 
-        // wire, plug and coils match whatever material is on the source cylinder
         Renderer sourceRenderer = source.GetComponent<Renderer>();
         colour = sourceRenderer != null ? sourceRenderer.sharedMaterial.color : Color.white;
         Tint(lr.material);
@@ -90,7 +90,7 @@ public class Wire : MonoBehaviour
             return;
         }
 
-        Color hdr = colour * glowIntensity;  
+        Color hdr = colour * glowIntensity; 
         hdr.a = 1f;
 
         if (m.HasProperty("_EmissionColor"))  
@@ -100,21 +100,21 @@ public class Wire : MonoBehaviour
             m.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
             m.SetColor("_EmissionColor", hdr);
         }
-        else                                  
+        else               
         {
             m.color = hdr;
         }
     }
 
-    // ---------------- rods ----------------
+    //---------------- Rods ----------------
 
     public bool HasRod(WireRod rod) => rods.Contains(rod);
 
     public void Wrap(WireRod rod)
     {
         rods.Add(rod);
-        LockSpan(spans.Count - 1);   // the span that now ends at this rod stops growing
-        spans.Add(new Span(segmentsPerSpan + 1, rod.WrapPoint));   // new span from this rod to the plug
+        LockSpan(spans.Count - 1);  
+        spans.Add(new Span(segmentsPerSpan + 1, rod.WrapPoint));  
         coils.Add(MakeCoil(rod));
     }
 
@@ -126,11 +126,11 @@ public class Wire : MonoBehaviour
         spans.RemoveAt(spans.Count - 1);
         Destroy(coils[last]);
         coils.RemoveAt(last);
-        spans[spans.Count - 1].lockedLength = -1f;   // this span ends at the plug again, so it can pay out
+        spans[spans.Count - 1].lockedLength = -1f;
         return true;
     }
 
-    void LockSpan(int s) // Fix a span's length, to prevent it to overgrow, glitch up to ceiling
+    void LockSpan(int s)
     {
         SpanEnds(s, out Vector3 a, out Vector3 b);
         spans[s].lockedLength = Mathf.Max(Vector3.Distance(a, b) * connectedSlack, minLength);
@@ -155,7 +155,7 @@ public class Wire : MonoBehaviour
         return coil;
     }
 
-    // ---------------- plug ----------------
+    //---------------- Plug ----------------
 
     public void HoldInHand(Transform cam, Vector3 localOffset, float scale)
     {
@@ -165,21 +165,21 @@ public class Wire : MonoBehaviour
         plug.localScale = plugScale * scale;
     }
 
-    public void PlugInto(WireNode socket) // Plug sits on top of the socket
+    public void PlugInto(WireNode socket)
     {
         plug.SetParent(transform, false);
         plug.localScale = plugScale;
         plug.SetPositionAndRotation(socket.TopPoint + Vector3.up * plugScale.y, Quaternion.identity);
-        LockSpan(spans.Count - 1);   // connected: the last span stops paying out and just hangs loosely
+        LockSpan(spans.Count - 1); 
     }
 
-    // ---------------- simulation ----------------
+    //---------------- Simulation ----------------
 
     void LateUpdate()
     {
         if (Source == null || spans.Count == 0) return;
         float dt = Mathf.Min(Time.deltaTime, 1f / 30f);
-        if (dt <= 0f) return;   // game paused (timeScale = 0)
+        if (dt <= 0f) return; // game paused (timeScale = 0)
 
         for (int s = 0; s < spans.Count; s++)
         {
@@ -197,9 +197,9 @@ public class Wire : MonoBehaviour
 
         float straight = Vector3.Distance(a, b);
         float ropeLength = span.lockedLength > 0f
-            ? span.lockedLength                                   // connected: fixed length
-            : Mathf.Clamp(straight * slack, minLength, maxLength); // carrying: pays out, up to maxLength
-        ropeLength = Mathf.Max(ropeLength, straight);             // never shorter than the gap (avoids fighting/jitter)
+            ? span.lockedLength                                   
+            : Mathf.Clamp(straight * slack, minLength, maxLength); 
+        ropeLength = Mathf.Max(ropeLength, straight);  
         float segLength = ropeLength / n;
 
         Vector3 gravity = Physics.gravity * dt * dt;
@@ -210,6 +210,7 @@ public class Wire : MonoBehaviour
             pos[i] += velocity + gravity;
         }
 
+        //Pin both ends, keep each segment at segment length + obstacle check
         for (int k = 0; k < iterations; k++)
         {
             pos[0] = a;
@@ -230,8 +231,14 @@ public class Wire : MonoBehaviour
                     pos[i + 1] -= correction * 0.5f;
                 }
             }
+
+            if (collideWithObstacles && (k + 1) % collisionEvery == 0)
+                PushOutOfObstacles(pos, prev, n);
         }
 
+        if (collideWithObstacles) PushOutOfObstacles(pos, prev, n);
+
+        //Make rope stay on floor, no glitch in floor
         for (int i = 1; i < n; i++)
         {
             if (Physics.Raycast(pos[i] + Vector3.up * 0.5f, Vector3.down, out RaycastHit hit,
@@ -246,6 +253,7 @@ public class Wire : MonoBehaviour
             }
         }
 
+        //Make rope not fly up and glitch ceiling
         float maxY = Mathf.Max(a.y, b.y) + 0.05f;
         for (int i = 1; i < n; i++)
         {
@@ -260,6 +268,58 @@ public class Wire : MonoBehaviour
                 prev[i].y = maxY;
             }
         }
+    }
+    void PushOutOfObstacles(Vector3[] pos, Vector3[] prev, int n)
+    {
+        SphereCollider s = GetProbe();
+        s.radius = collisionRadius;
+
+        for (int i = 1; i < n; i++) 
+        {
+            int count = Physics.OverlapSphereNonAlloc(pos[i], collisionRadius, overlaps,
+                                                      obstacleMask, QueryTriggerInteraction.Ignore);
+            for (int c = 0; c < count; c++)
+            {
+                Collider other = overlaps[c];
+                if (ShouldIgnore(other)) continue;
+
+                if (Physics.ComputePenetration(s, pos[i], Quaternion.identity,
+                                               other, other.transform.position, other.transform.rotation,
+                                               out Vector3 dir, out float depth))
+                {
+                    Vector3 push = dir * depth;
+                    pos[i] += push;
+                    prev[i] += push;
+                }
+            }
+        }
+    }
+
+    //Things the wire is allowed to overlap and glitch in
+    static bool ShouldIgnore(Collider c)
+    {
+        if (ignoreCache.TryGetValue(c, out bool ignore)) return ignore;
+
+        ignore = c.GetComponentInParent<PlayerMovement>() != null
+              || c.GetComponentInParent<WireRod>() != null
+              || c.GetComponentInParent<WireNode>() != null
+              || c.GetComponentInParent<Wire>() != null;
+
+        ignoreCache[c] = ignore;
+        return ignore;
+    }
+
+    static SphereCollider GetProbe()
+    {
+        if (probe != null) return probe;
+
+        GameObject go = new GameObject("WireCollisionProbe");
+        go.hideFlags = HideFlags.HideAndDontSave;
+        go.transform.position = new Vector3(0f, -10000f, 0f); 
+        probe = go.AddComponent<SphereCollider>();
+        probe.isTrigger = true;
+        ignoreCache.Clear();//reset colliders
+        return probe;
     }
 
     void Draw()

@@ -13,13 +13,10 @@ public class Level3AudioManager : MonoBehaviour
 
     [Header("Music")]
     public AudioClip Level3BGM;
-    [Range(0f, 1f)] public float musicVolume = 0.3f;
 
     [Header("Ambience")]
     public AudioClip Ambience;
-    [Range(0f, 1f)] public float ambienceVolume = 0.4f;
     public AudioClip MachineHum;
-    [Range(0f, 1f)] public float machineHumVolume = 0.6f;
 
     [Header("Player SFX (2D)")]
     public AudioClip PlayerWalk;
@@ -43,6 +40,9 @@ public class Level3AudioManager : MonoBehaviour
     [Header("Volume")]
     [Range(0f, 1f)] public float sfxVolume = 1f;
     [Range(0f, 1f)] public float walkVolume = 0.5f;
+    [Range(0f, 1f)] public float musicVolume = 0.3f;
+    [Range(0f, 1f)] public float ambienceVolume = 0.4f;
+    [Range(0f, 1f)] public float machineHumVolume = 0.6f;
     public float sfxMaxDistance = 30f;
 
     [Header("Player detection")]
@@ -88,19 +88,19 @@ public class Level3AudioManager : MonoBehaviour
 
         bool grounded = player.IsGrounded;
 
-        // jump
+        //jump
         if (Input.GetKeyDown(player.jumpkey) && grounded && Time.time - lastJumpSound > jumpSoundCooldown)
         {
             PlaySFX(PlayerJump);
             lastJumpSound = Time.time;
         }
 
-        // walk
+        //walk
         bool pressingMove = Input.GetAxisRaw("Horizontal") != 0f || Input.GetAxisRaw("Vertical") != 0f;
         PlayerMoves(pressingMove && (grounded || !needGroundForWalk));
     }
 
-    // ---------- MUSIC ----------
+    //---------- MUSIC ----------
     public void PlayMusic()
     {
         if (Level3BGM == null || MusicSource == null) return;
@@ -112,7 +112,7 @@ public class Level3AudioManager : MonoBehaviour
         MusicSource.Play();
     }
 
-    // ---------- AMBIENCE ----------
+    //---------- AMBIENCE ----------
     public void PlayAmbience()
     {
         if (Ambience == null || AmbienceSource == null) return;
@@ -138,7 +138,7 @@ public class Level3AudioManager : MonoBehaviour
         MachineHumSource.Play();
     }
 
-    // ---------- SFX ----------
+    //---------- SFX ----------
     public void PlaySFX(AudioClip clip)
     {
         if (clip != null && SfxSource != null) SfxSource.PlayOneShot(clip, sfxVolume);

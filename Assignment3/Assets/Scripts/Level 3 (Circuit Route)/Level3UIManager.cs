@@ -60,7 +60,7 @@ public class Level3UIManager : MonoBehaviour
         if (messageTimer <= 0f && messageText != null) messageText.text = "";
     }
 
-    // ---------------- HUD ----------------
+    //---------------- HUD ----------------
 
     public void SetObjective(string objective, string progress)
     {
@@ -81,12 +81,12 @@ public class Level3UIManager : MonoBehaviour
         Instance.messageTimer = duration;
     }
 
-    // ---------------- pause menu ----------------
+    //---------------- Pause menu ----------------
 
     public void Pause()
     {
         IsPaused = true;
-        Time.timeScale = 0f; // stops physics, movement
+        Time.timeScale = 0f; //stops physics, movement
         AudioListener.pause = true;       
 
         if (pausePanel != null) pausePanel.SetActive(true);

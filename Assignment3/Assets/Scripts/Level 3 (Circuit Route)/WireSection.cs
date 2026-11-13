@@ -10,18 +10,18 @@ public class WireSection : MonoBehaviour
     [Header("Rules")]
     public bool resetOnWrongSocket = false;
 
-    [Header("When complete")]
+    [Header("Section complete")]
     public GameObject gateToOpen;
 
-    [Header("Feedback (optional)")]
+    [Header("Short circuit")]
     public ParticleSystem sparkPrefab; 
 
-    public event Action<WireSection> Changed; // progress changed
-    public event Action<WireSection> Completed; // every pair connected
+    public event Action<WireSection> Changed; //progress changed
+    public event Action<WireSection> Completed; //every pair connected
 
     public bool IsActive { get; set; }
     public bool IsComplete { get; private set; }
-    public int Index { get; set; } // 0 = Section 1, 1 = Section 2, 2 = Section 3 (set by RoomManager)
+    public int Index { get; set; } //0 = Section 1, 1 = Section 2, 2 = Section 3
 
     public int Total => sources.Count;
     public int ConnectedCount
@@ -51,7 +51,7 @@ public class WireSection : MonoBehaviour
     }
 
 
-    public bool TryConnect(Wire wire, WireNode socket) // Returns true if the plug went in
+    public bool TryConnect(Wire wire, WireNode socket) //return true if the plug went in
     {
         WireNode source = wire.Source;
 
@@ -74,10 +74,9 @@ public class WireSection : MonoBehaviour
             return true;
         }
 
-        // wrong socket
-        if (sparkPrefab != null) Instantiate(sparkPrefab, socket.TopPoint, Quaternion.identity);
+        if (sparkPrefab != null) Instantiate(sparkPrefab, socket.TopPoint, Quaternion.identity); //wrong socket
 
-        // Section 1 = Wrong audio, every other section = Short Circuit audio
+        //Section 1 = Wrong audio, other sections = Short Circuit audio
         if (Index == 0)
             Level3AudioManager.Instance?.PlaySFX(Level3AudioManager.Instance.Wrong);
         else

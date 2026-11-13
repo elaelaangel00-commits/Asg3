@@ -1623,7 +1623,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -60}
+  m_AnchoredPosition: {x: 138, y: -60}
   m_SizeDelta: {x: 500, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &145732600
@@ -1712,7 +1712,7 @@ MonoBehaviour:
   m_VertexBufferAutoSizeReduction: 0
   m_useMaxVisibleDescender: 1
   m_pageToDisplay: 1
-  m_margin: {x: 0, y: 0, z: 0, w: 0}
+  m_margin: {x: -273.9552, y: 0, z: 0, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
   m_hasFontAssetChanged: 0
@@ -8308,9 +8308,9 @@ MonoBehaviour:
   lightOnMaterial: {fileID: 2100000, guid: 7ca284beef5dd3c4bb5a49b319a31129, type: 2}
   exitDoor: {fileID: 1057997560}
   nextSceneName: Level 4
+  doorPrompt: Open door to the next room
   interactKey: 101
   interactRange: 2.5
-  doorPrompt: Open door to the next room
 --- !u!1 &1099144049
 GameObject:
   m_ObjectHideFlags: 0
@@ -11376,11 +11376,8 @@ MonoBehaviour:
   AmbienceSource: {fileID: 1798922062}
   MachineHumSource: {fileID: 141697468}
   Level3BGM: {fileID: 8300000, guid: 22e1874cd81dcda469b0c227601c74e5, type: 3}
-  musicVolume: 0.3
   Ambience: {fileID: 8300000, guid: 782eea065303fcf428de823b53be1558, type: 3}
-  ambienceVolume: 0.3
   MachineHum: {fileID: 8300000, guid: 54f9dabda728f2d489a74696a863b70a, type: 3}
-  machineHumVolume: 0.6
   PlayerWalk: {fileID: 8300000, guid: 01ec520fc36e0bb429f0e6a3145a725d, type: 3}
   PlayerJump: {fileID: 8300000, guid: 8398870f25a6082489fcfdda58e41670, type: 3}
   Fall: {fileID: 8300000, guid: 8e4aafe69de729f45bfe330b5401df85, type: 3}
@@ -11396,6 +11393,9 @@ MonoBehaviour:
   DoorAppears: {fileID: 8300000, guid: 1cc98bd01b64b1044bf9398eeee75175, type: 3}
   sfxVolume: 1
   walkVolume: 1
+  musicVolume: 0.3
+  ambienceVolume: 0.3
+  machineHumVolume: 0.6
   sfxMaxDistance: 20
   needGroundForWalk: 1
   jumpSoundCooldown: 0.3
@@ -14399,7 +14399,7 @@ MonoBehaviour:
   m_VertexBufferAutoSizeReduction: 0
   m_useMaxVisibleDescender: 1
   m_pageToDisplay: 1
-  m_margin: {x: 0, y: 0, z: 0, w: 0}
+  m_margin: {x: 0, y: 0, z: -330.19226, w: 0}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
   m_hasFontAssetChanged: 0
@@ -14429,7 +14429,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 120}
+  m_AnchoredPosition: {x: -159, y: 120}
   m_SizeDelta: {x: 500, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &2039275234

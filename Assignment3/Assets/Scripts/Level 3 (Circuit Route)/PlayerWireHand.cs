@@ -21,10 +21,11 @@ public class PlayerWireHand : MonoBehaviour
     public float heldScale = 0.5f;
 
     Wire held;
+    public bool IsHolding => held != null;
 
-    public void DropHeldPlug() // Used by KillZone, falling drops whatever plug you're holding (it goes back to its source)
+    public void DropHeldPlug() //used by KillZone, falling drops whatever plug u holding (it goes back to its source)
     {
-        if (held != null) Drop(); // plays the Return Wire sound too, on top of the splash
+        if (held != null) Drop(); //plays the Return Wire sound too, on top of the splash
     }
 
     void Start()
@@ -64,7 +65,7 @@ public class PlayerWireHand : MonoBehaviour
     }
 
 
-    Collider LookAt() // What the crosshair is pointing at, within range
+    Collider LookAt() //what the crosshair is pointing at + within range
     {
         if (playerCamera == null) return null;
         Ray ray = new Ray(playerCamera.transform.position, playerCamera.transform.forward);
@@ -79,7 +80,7 @@ public class PlayerWireHand : MonoBehaviour
         if (!section.IsActive) { Level3UIManager.Message("No power to this section yet", Color.yellow); return; }
         if (section.IsComplete) { Level3UIManager.Message("This section is already powered", Color.yellow); return; }
 
-        if (source.wire != null) section.Unplug(source); // redo a connected wire
+        if (source.wire != null) section.Unplug(source); //redo a connected wire
 
         held = Instantiate(wirePrefab);
         held.Init(source);

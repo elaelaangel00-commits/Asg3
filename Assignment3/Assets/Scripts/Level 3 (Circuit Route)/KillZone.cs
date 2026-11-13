@@ -3,7 +3,7 @@ using UnityEngine;
 [RequireComponent(typeof(Collider))]
 public class KillZone : MonoBehaviour
 {
-    public Transform sectionStart; // respawn spot
+    public Transform sectionStart; //respawn spot
 
     void Reset()
     {
@@ -15,17 +15,24 @@ public class KillZone : MonoBehaviour
         PlayerWireHand hand = other.GetComponentInParent<PlayerWireHand>();
         if (hand == null || sectionStart == null) return;
 
-        Level3AudioManager.Instance?.PlaySFX(Level3AudioManager.Instance.Fall);  
-       
-        hand.DropHeldPlug();
+        Level3AudioManager.Instance?.PlaySFX(Level3AudioManager.Instance.Fall);
+
+        if (hand.IsHolding)
+        {
+            hand.DropHeldPlug();   // also plays the Return Wire sound
+            Level3UIManager.Message("You fell! The wire went back to its source", Color.yellow);
+            Level3AudioManager.Instance?.PlaySFX(Level3AudioManager.Instance.ReturnWire);
+        }
+        else
+        {
+            Level3UIManager.Message("Oops, you fell!", Color.yellow);
+        }
+
         Teleport(hand.transform, sectionStart.position);
-        Level3AudioManager.Instance?.PlaySFX(Level3AudioManager.Instance.ReturnWire);
-        Level3UIManager.Message("You fell! The wire went back to its source", Color.yellow);
     }
 
     static void Teleport(Transform player, Vector3 position)
     {
-        // works for both CharacterController and Rigidbody players
         CharacterController cc = player.GetComponent<CharacterController>();
         Rigidbody rb = player.GetComponent<Rigidbody>();
 

@@ -4,7 +4,7 @@ public class WireNode : MonoBehaviour
 {
     public bool isSource;                 
     public WireNode partner;            
-    public WireRod[] requiredRods; // for Section 3
+    public WireRod[] requiredRods; //Section 3
 
     [HideInInspector] public WireSection section;   
     [HideInInspector] public bool connected;

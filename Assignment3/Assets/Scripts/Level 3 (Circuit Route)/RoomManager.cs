@@ -1,24 +1,22 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-// Activates sections in order, lights up the power box,
-// scene change when the player looks at the end door and presses E.
 public class RoomManager : MonoBehaviour
 {
-    [Header("Sections (in order)")]
+    [Header("Sections")]
     public WireSection[] sections;
 
-    [Header("Power box beside the door")]
-    public Renderer[] powerLights; // one light per section, same order
+    [Header("Power box")]
+    public Renderer[] powerLights;
     public Material lightOffMaterial;
     public Material lightOnMaterial;
 
     [Header("Exit door")]
     public GameObject exitDoor;
     public string nextSceneName = "Level4";
+    public string doorPrompt = "Open door to the next room";
     public KeyCode interactKey = KeyCode.E;
     public float interactRange = 2.5f;
-    public string doorPrompt = "Open door to the next room";
 
     int current;
     bool doorOpen;
@@ -28,7 +26,7 @@ public class RoomManager : MonoBehaviour
     {
         for (int i = 0; i < sections.Length; i++)
         {
-            sections[i].Index = i;   // section number
+            sections[i].Index = i; //section number
             sections[i].Changed += OnSectionChanged;
             sections[i].Completed += OnSectionCompleted;
         }
@@ -71,7 +69,7 @@ public class RoomManager : MonoBehaviour
             Level3UIManager.Instance.SetPrompt("[" + interactKey + "] " + doorPrompt);
     }
 
-    // ---------------- sections ----------------
+    //---------------- Sections ----------------
 
     void ActivateSection(int index)
     {
@@ -103,7 +101,7 @@ public class RoomManager : MonoBehaviour
         else ShowDoor();
     }
 
-    // ---------------- exit door ----------------
+    //---------------- Exit door ----------------
 
     void ShowDoor()
     {
@@ -131,7 +129,7 @@ public class RoomManager : MonoBehaviour
                && hit.collider.transform.IsChildOf(exitDoor.transform);
     }
 
-    // ---------------- UI ----------------
+    //---------------- UI ----------------
 
     void RefreshUI()
     {
