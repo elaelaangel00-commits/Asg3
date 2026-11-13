@@ -1,9 +1,9 @@
 
-using System.Collections;
 using UnityEngine;
 
 public class MirrorButton : MonoBehaviour
 {
+    // The two possible button actions.
     public enum ButtonAction
     {
         RotateMirror,
@@ -11,115 +11,131 @@ public class MirrorButton : MonoBehaviour
     }
 
     [Header("Button Action")]
-    public ButtonAction buttonAction = ButtonAction.RotateMirror;
+    public ButtonAction buttonAction =
+        ButtonAction.RotateMirror;
 
     [Header("Mirror Settings")]
     public Transform mirror;
-    public float rotateAngle = 45f;
-    public float rotationDuration = 0.2f;
 
     [Header("Laser Settings")]
     public LaserPuzzle laserPuzzle;
 
-    private Transform trackedMirror;
-    private Quaternion targetRotation;
-    private Coroutine rotationCoroutine;
+    // Rotate by exactly 45 degrees per click.
+    private const float rotationStep = 45f;
 
+    private float currentAngle;
+    private Transform trackedMirror;
+
+    // Prevent duplicate clicks in one frame.
+    private int lastInteractionFrame = -1;
+
+
+    // The interaction message shown to players.
     public string PromptText
     {
         get
         {
-            if (buttonAction == ButtonAction.RotateMirror)
-                return "Press E to rotate mirror";
+            if (buttonAction == ButtonAction.ActivateLaser)
+            {
+                if (laserPuzzle == null)
+                    return "Laser button not configured";
 
-            if (laserPuzzle != null && laserPuzzle.IsLaserOn)
-                return "Laser activated";
+                return laserPuzzle.IsLaserOn
+                    ? "Left click to turn laser OFF"
+                    : "Left click to turn laser ON";
+            }
 
-            return "Press E to activate laser";
+            return "Left click to rotate mirror";
         }
     }
 
-    public void Interact()
+
+    // Runs when the game starts.
+    private void Start()
     {
-        if (buttonAction == ButtonAction.RotateMirror)
-        {
-            RotateMirror();
-        }
-        else if (laserPuzzle != null)
-        {
-            laserPuzzle.ActivateLaser();
-        }
-        else
-        {
-            Debug.LogWarning("LaserPuzzle not assigned!");
-        }
+        SetupMirror();
     }
 
-    public void RotateMirror()
+
+    // Read the mirror's starting Y rotation.
+    private void SetupMirror()
     {
         if (mirror == null)
+            return;
+
+        trackedMirror = mirror;
+
+        currentAngle = Mathf.Repeat(
+            mirror.localEulerAngles.y,
+            360f
+        );
+    }
+
+
+    // Called by PlayerInteract when clicked.
+    public void Interact()
+    {
+        // Prevent duplicate interaction in one frame.
+        if (lastInteractionFrame == Time.frameCount)
+            return;
+
+        lastInteractionFrame = Time.frameCount;
+
+        // ACTION 1: Toggle laser ON or OFF.
+        if (buttonAction == ButtonAction.ActivateLaser)
         {
-            Debug.LogWarning("Mirror not assigned to " + name);
+            if (laserPuzzle == null)
+            {
+                Debug.LogWarning(
+                    "Laser Puzzle not assigned!"
+                );
+                return;
+            }
+
+            laserPuzzle.ToggleLaser();
             return;
         }
 
-        if (trackedMirror != mirror)
+        // ACTION 2: Rotate mirror.
+        if (mirror == null)
         {
-            trackedMirror = mirror;
-            targetRotation = mirror.rotation;
+            Debug.LogWarning("Mirror not assigned!");
+            return;
         }
 
-        // Rotate 45 degrees around WORLD Y.
-        // Repeated presses continue in the same direction.
-        targetRotation =
-            Quaternion.AngleAxis(rotateAngle, Vector3.up)
-            * targetRotation;
+        // Update rotation if assigned mirror changed.
+        if (trackedMirror != mirror)
+            SetupMirror();
 
-        if (rotationCoroutine != null)
-            StopCoroutine(rotationCoroutine);
-
-        rotationCoroutine = StartCoroutine(
-            AnimateRotation()
-        );
-
-        Debug.Log(name + " rotating " + mirror.name);
+        RotateMirror();
     }
 
-    private IEnumerator AnimateRotation()
-    {
-        Quaternion start = mirror.rotation;
-        Quaternion end = targetRotation;
 
-        float duration = Mathf.Max(
-            0.01f,
-            rotationDuration
+    // Rotate mirror by 45 degrees.
+    private void RotateMirror()
+    {
+        // Add exactly 45 degrees.
+        currentAngle += rotationStep;
+
+        // Wrap around after 360 degrees.
+        // Example: 315 + 45 becomes 0.
+        currentAngle = Mathf.Repeat(
+            currentAngle,
+            360f
         );
 
-        float elapsed = 0f;
+        // Rotate the parent mirror pivot.
+        mirror.localRotation = Quaternion.Euler(
+            0f,
+            currentAngle,
+            0f
+        );
 
-        while (elapsed < duration)
-        {
-            elapsed += Time.deltaTime;
-
-            float t = Mathf.Clamp01(
-                elapsed / duration
-            );
-
-            t = t * t * (3f - 2f * t);
-
-            mirror.rotation = Quaternion.Slerp(
-                start,
-                end,
-                t
-            );
-
-            yield return null;
-        }
-
-        mirror.rotation = end;
-
-        Physics.SyncTransforms();
-
-        rotationCoroutine = null;
+        Debug.Log(
+            mirror.name +
+            " rotated to Y = " +
+            currentAngle +
+            " degrees"
+        );
     }
 }
