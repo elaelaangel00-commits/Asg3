@@ -3,8 +3,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using TMPro;
 
-// This script needs an AudioSource component.
-// Unity automatically adds one if it is missing.
+// Automatically requires an AudioSource.
 [RequireComponent(typeof(AudioSource))]
 
 public class PlayerInteract : MonoBehaviour
@@ -15,16 +14,15 @@ public class PlayerInteract : MonoBehaviour
 
     [Header("Raycast Settings")]
 
-    // Maximum distance the player can interact.
-    // Example: 3 means the button must be
-    // within 3 Unity units of the camera.
+    // Maximum distance for interacting
+    // with a button.
     public float interactDistance = 3f;
 
-    // Camera used to detect the buttons.
+    // Camera that detects the button.
     public Camera viewCamera;
 
-    // TRUE: Point at buttons with the mouse.
-    // FALSE: Point using the centre of the screen.
+    // TRUE = aim using mouse cursor.
+    // FALSE = aim using screen centre.
     public bool useMouseHover = true;
 
 
@@ -34,8 +32,7 @@ public class PlayerInteract : MonoBehaviour
 
     [Header("Interaction")]
 
-    // Enable this if you also want the E key
-    // to activate buttons.
+    // Allows E to activate buttons if enabled.
     public bool allowEKey = false;
 
 
@@ -45,34 +42,30 @@ public class PlayerInteract : MonoBehaviour
 
     [Header("Interaction UI")]
 
-    // TextMeshPro text that tells the player
-    // what button they are pointing at.
+    // TextMeshPro prompt displayed to players.
     public TMP_Text interactionPrompt;
 
-    // Enable only if using a World Space Canvas.
+    // Enable only for World Space Canvas.
     public bool movePromptAboveButton = false;
 
-    // How high the text appears above the button.
+    // Vertical offset above the button.
     public float promptHeight = 0.7f;
 
 
     // ==========================================
-    // BUTTON SOUND EFFECT
+    // BUTTON SOUND
     // ==========================================
 
     [Header("Button Click Sound")]
 
-    // Drag your button click sound here.
+    // Sound played when the player clicks.
     public AudioClip selectionSound;
 
-    // Sound volume:
-    // 0 = silent
-    // 1 = maximum volume
+    // Button sound volume.
     [Range(0f, 1f)]
     public float selectionVolume = 1f;
 
-    // Stores the AudioSource component.
-    // Private means it is managed by this script.
+    // AudioSource used to play sound.
     private AudioSource audioSource;
 
 
@@ -82,15 +75,13 @@ public class PlayerInteract : MonoBehaviour
 
     private void Awake()
     {
-        // Find the AudioSource on this GameObject.
+        // Get AudioSource from this GameObject.
         audioSource = GetComponent<AudioSource>();
 
-        // Prevent sound from playing automatically
-        // when the game starts.
+        // Disable automatic audio playback.
         audioSource.playOnAwake = false;
 
-        // 0 = 2D audio.
-        // The sound is not affected by distance.
+        // Make button clicks 2D audio.
         audioSource.spatialBlend = 0f;
     }
 
@@ -101,20 +92,20 @@ public class PlayerInteract : MonoBehaviour
 
     private void Start()
     {
-        // If no camera is assigned in the Inspector,
-        // try finding one attached to the player.
+        // Try finding a camera attached
+        // to this GameObject or its children.
         if (viewCamera == null)
         {
             viewCamera = GetComponentInChildren<Camera>();
         }
 
-        // If still missing, find the Main Camera.
+        // Otherwise use the Main Camera.
         if (viewCamera == null)
         {
             viewCamera = Camera.main;
         }
 
-        // Hide the interaction text at game start.
+        // Hide interaction text at the beginning.
         HidePrompt();
     }
 
@@ -126,111 +117,193 @@ public class PlayerInteract : MonoBehaviour
     // Update runs once every frame.
     private void Update()
     {
-        // Check which button the player is pointing at.
-        MirrorButton button = FindButton();
+        // Search for either a mirror button
+        // or a laser button using raycasting.
+        MirrorButton mirrorButton;
+        LaserButton laserButton;
 
-        // If the player is not pointing at a button,
-        // hide the interaction text.
-        if (button == null)
+        bool foundButton = FindButton(
+            out mirrorButton,
+            out laserButton
+        );
+
+
+        // Nothing detected?
+        // Hide the interaction text.
+        if (!foundButton)
         {
             HidePrompt();
             return;
         }
 
-        // Show the interaction instructions.
-        // IMPORTANT:
-        // Hovering does NOT play any sound.
-        ShowPrompt(button);
+
+        // ======================================
+        // DISPLAY CORRECT INTERACTION PROMPT
+        // ======================================
+
+        if (mirrorButton != null)
+        {
+            // The player is pointing at
+            // a mirror rotation button.
+            ShowPrompt(
+                mirrorButton.PromptText,
+                mirrorButton.transform
+            );
+        }
+        else if (laserButton != null)
+        {
+            // The player is pointing at
+            // the laser activation button.
+            ShowPrompt(
+                laserButton.PromptText,
+                laserButton.transform
+            );
+        }
 
 
-        // Check whether the left mouse button
-        // was pressed this frame.
+        // ======================================
+        // CHECK PLAYER INPUT
+        // ======================================
+
+        // Check for a left mouse click.
         bool mouseClicked =
             Mouse.current != null &&
             Mouse.current.leftButton.wasPressedThisFrame;
 
 
-        // Check whether E was pressed.
-        // This only works if allowEKey is enabled.
+        // Optionally check for E key.
         bool ePressed =
             allowEKey &&
             Keyboard.current != null &&
             Keyboard.current.eKey.wasPressedThisFrame;
 
 
-        // If neither input was pressed,
-        // stop here and wait for interaction.
+        // Do not activate anything until clicked.
+        //
+        // IMPORTANT:
+        // Simply hovering over a button
+        // will NOT play a sound.
         if (!mouseClicked && !ePressed)
         {
             return;
         }
 
 
-        // Check whether the button is configured.
-        if (!CanInteract(button))
+        // ======================================
+        // ACTIVATE THE CORRECT BUTTON
+        // ======================================
+
+        if (mirrorButton != null)
+        {
+            // Mirror button requires a mirror.
+            if (mirrorButton.mirror == null)
+            {
+                return;
+            }
+
+            // Rotate the mirror by 45 degrees.
+            mirrorButton.Interact();
+        }
+        else if (laserButton != null)
+        {
+            // Laser button requires LaserPuzzle.
+            if (laserButton.laserPuzzle == null)
+            {
+                return;
+            }
+
+            // Turn the laser ON or OFF.
+            laserButton.Interact();
+        }
+        else
         {
             return;
         }
 
 
-        // Activate the button.
-        // The MirrorButton script decides whether
-        // to rotate a mirror or toggle the laser.
-        button.Interact();
+        // ======================================
+        // PLAY BUTTON SOUND
+        // ======================================
 
-
-        // Play a sound ONLY when the player
-        // uses the left mouse button.
+        // Sound plays only on a mouse click.
+        // E-key interaction does not play it.
         if (mouseClicked)
         {
             PlayClickSound();
         }
 
 
-        // Update the prompt after interacting.
+        // ======================================
+        // UPDATE INTERACTION TEXT
+        // ======================================
+
+        // Refresh text after interaction.
+        //
         // Example:
-        // "Turn laser ON" becomes "Turn laser OFF".
-        ShowPrompt(button);
+        // "Turn laser ON" becomes
+        // "Turn laser OFF".
+        if (mirrorButton != null)
+        {
+            ShowPrompt(
+                mirrorButton.PromptText,
+                mirrorButton.transform
+            );
+        }
+        else if (laserButton != null)
+        {
+            ShowPrompt(
+                laserButton.PromptText,
+                laserButton.transform
+            );
+        }
     }
 
 
     // ==========================================
-    // FIND BUTTON USING RAYCAST
+    // DETECT BUTTONS USING RAYCAST
     // ==========================================
 
-    private MirrorButton FindButton()
+    private bool FindButton(
+        out MirrorButton mirrorButton,
+        out LaserButton laserButton)
     {
-        // Without a camera, raycasting cannot work.
+        // out = returns information through
+        // these variables to the calling function.
+        //
+        // Start with no button detected.
+        mirrorButton = null;
+        laserButton = null;
+
+
+        // Without a camera we cannot raycast.
         if (viewCamera == null)
         {
-            return null;
+            return false;
         }
+
 
         // Ray = invisible line used for detection.
         Ray ray;
 
 
-        // OPTION 1: Use mouse position.
+        // Use mouse position if enabled.
         if (useMouseHover && Mouse.current != null)
         {
-            // Shoot the invisible ray from the camera
-            // through the mouse cursor position.
             ray = viewCamera.ScreenPointToRay(
                 Mouse.current.position.ReadValue()
             );
         }
         else
         {
-            // OPTION 2: Use screen centre.
-            // 0.5, 0.5 means the middle of the screen.
+            // Otherwise shoot from screen centre.
             ray = viewCamera.ViewportPointToRay(
                 new Vector3(0.5f, 0.5f, 0f)
             );
         }
 
 
-        // Physics.Raycast checks whether the ray
-        // touches a 3D Collider.
+        // Shoot a ray and check if it hits
+        // a 3D Collider within interaction distance.
         if (Physics.Raycast(
             ray,
             out RaycastHit hit,
@@ -238,53 +311,56 @@ public class PlayerInteract : MonoBehaviour
             Physics.DefaultRaycastLayers,
             QueryTriggerInteraction.Collide))
         {
-            // Check whether the object has MirrorButton.
-            // GetComponentInParent also searches
-            // its parent GameObjects.
-            return hit.collider
+            // ----------------------------------
+            // CHECK FOR MIRROR BUTTON
+            // ----------------------------------
+
+            // Search the detected GameObject
+            // and its parents for MirrorButton.
+            mirrorButton = hit.collider
                 .GetComponentInParent<MirrorButton>();
+
+            if (mirrorButton != null)
+            {
+                return true;
+            }
+
+
+            // ----------------------------------
+            // CHECK FOR LASER BUTTON
+            // ----------------------------------
+
+            // If no MirrorButton was found,
+            // check for a LaserButton instead.
+            laserButton = hit.collider
+                .GetComponentInParent<LaserButton>();
+
+            if (laserButton != null)
+            {
+                return true;
+            }
         }
 
 
-        // Nothing detected.
-        return null;
+        // Neither type of button was found.
+        return false;
     }
 
 
     // ==========================================
-    // CHECK BUTTON CONFIGURATION
-    // ==========================================
-
-    private bool CanInteract(MirrorButton button)
-    {
-        // If this is the laser activation button,
-        // it needs a LaserPuzzle script assigned.
-        if (button.buttonAction ==
-            MirrorButton.ButtonAction.ActivateLaser)
-        {
-            return button.laserPuzzle != null;
-        }
-
-        // If this is a mirror rotation button,
-        // it needs a mirror Transform assigned.
-        return button.mirror != null;
-    }
-
-
-    // ==========================================
-    // PLAY BUTTON CLICK SOUND
+    // PLAY BUTTON SOUND
     // ==========================================
 
     private void PlayClickSound()
     {
-        // If no sound is assigned, do nothing.
+        // Do nothing if no AudioClip is assigned.
         if (selectionSound == null)
         {
             return;
         }
 
-        // PlayOneShot plays the sound once.
-        // It does not continuously loop.
+        // PlayOneShot plays the clip once.
+        // It doesn't automatically loop.
         audioSource.PlayOneShot(
             selectionSound,
             selectionVolume
@@ -293,35 +369,38 @@ public class PlayerInteract : MonoBehaviour
 
 
     // ==========================================
-    // SHOW INTERACTION TEXT
+    // SHOW INTERACTION PROMPT
     // ==========================================
 
-    private void ShowPrompt(MirrorButton button)
+    private void ShowPrompt(
+        string promptText,
+        Transform buttonTransform)
     {
-        // Stop if no TextMeshPro UI is assigned.
+        // Stop if no TMP text is assigned.
         if (interactionPrompt == null)
         {
             return;
         }
 
-        // Make the text visible.
+        // Display the interaction text.
         interactionPrompt.gameObject.SetActive(true);
 
-        // Get the correct instructions
-        // from the MirrorButton script.
-        interactionPrompt.text = button.PromptText;
+        // Show the instructions from the
+        // detected button.
+        interactionPrompt.text = promptText;
 
 
         // OPTIONAL:
-        // Move the text above the actual button.
-        // Only use this with a World Space Canvas.
-        if (movePromptAboveButton)
+        // Move text above the actual button.
+        // Use only for World Space Canvas.
+        if (movePromptAboveButton &&
+            buttonTransform != null)
         {
             interactionPrompt.transform.position =
-                button.transform.position +
+                buttonTransform.position +
                 Vector3.up * promptHeight;
 
-            // Face the text towards the camera.
+            // Rotate prompt to face the camera.
             if (viewCamera != null)
             {
                 interactionPrompt.transform.rotation =
@@ -332,13 +411,13 @@ public class PlayerInteract : MonoBehaviour
 
 
     // ==========================================
-    // HIDE INTERACTION TEXT
+    // HIDE INTERACTION PROMPT
     // ==========================================
 
     private void HidePrompt()
     {
         // Hide the prompt when the player
-        // stops pointing at a button.
+        // isn't pointing at a button.
         if (interactionPrompt != null)
         {
             interactionPrompt.gameObject.SetActive(false);

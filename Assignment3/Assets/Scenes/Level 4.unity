@@ -668,7 +668,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 12.6, y: 8.7, z: -3.2}
-  m_LocalScale: {x: -52.52931, y: 2.1256485, z: 50.704426}
+  m_LocalScale: {x: 50, y: 2.1256485, z: 50.704426}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 211076368}
@@ -937,9 +937,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: af012783feabc374bae1507e8a14ba0f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MirrorButton
-  buttonAction: 0
   mirror: {fileID: 753658326}
-  laserPuzzle: {fileID: 1043162988136380345, guid: e42c04b5aef9540469d1bdf894e1f3f8, type: 3}
 --- !u!65 &202987474
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1446,9 +1444,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: af012783feabc374bae1507e8a14ba0f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MirrorButton
-  buttonAction: 0
   mirror: {fileID: 832952309}
-  laserPuzzle: {fileID: 1043162988136380345, guid: e42c04b5aef9540469d1bdf894e1f3f8, type: 3}
 --- !u!65 &274860601
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1943,9 +1939,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: af012783feabc374bae1507e8a14ba0f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MirrorButton
-  buttonAction: 0
   mirror: {fileID: 960122110}
-  laserPuzzle: {fileID: 1043162988136380345, guid: e42c04b5aef9540469d1bdf894e1f3f8, type: 3}
 --- !u!65 &327022473
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -2412,7 +2406,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 37.8, y: 3.8368301, z: -3.29}
-  m_LocalScale: {x: -1.8963484, y: 10.617499, z: 50.27483}
+  m_LocalScale: {x: 1, y: 10.617499, z: 50.27483}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 211076368}
@@ -3236,7 +3230,7 @@ GameObject:
   - component: {fileID: 757746866}
   - component: {fileID: 757746865}
   - component: {fileID: 757746864}
-  - component: {fileID: 757746863}
+  - component: {fileID: 757746867}
   m_Layer: 0
   m_Name: Button
   m_TagString: Untagged
@@ -3259,21 +3253,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 116578839}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &757746863
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 757746861}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: af012783feabc374bae1507e8a14ba0f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MirrorButton
-  buttonAction: 1
-  mirror: {fileID: 2577638168491542970}
-  laserPuzzle: {fileID: 4671365908541948712}
 --- !u!65 &757746864
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -3352,6 +3331,19 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 757746861}
   m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &757746867
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 757746861}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 34a9667f32defb544ad560e794ea2a7c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LaserButton
+  laserPuzzle: {fileID: 4671365908541948712}
 --- !u!1 &805995985
 GameObject:
   m_ObjectHideFlags: 0
@@ -3399,9 +3391,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: af012783feabc374bae1507e8a14ba0f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MirrorButton
-  buttonAction: 0
   mirror: {fileID: 1579802786}
-  laserPuzzle: {fileID: 1043162988136380345, guid: e42c04b5aef9540469d1bdf894e1f3f8, type: 3}
 --- !u!65 &805995988
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -6816,7 +6806,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: -12.599999, y: 3.8368301, z: -3.19}
-  m_LocalScale: {x: -1.8963484, y: 10.617499, z: 50.292915}
+  m_LocalScale: {x: 1, y: 10.617499, z: 50.292915}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 211076368}
@@ -7562,9 +7552,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: af012783feabc374bae1507e8a14ba0f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MirrorButton
-  buttonAction: 0
   mirror: {fileID: 74389927}
-  laserPuzzle: {fileID: 0}
 --- !u!1 &1879138711807072491
 GameObject:
   m_ObjectHideFlags: 0
