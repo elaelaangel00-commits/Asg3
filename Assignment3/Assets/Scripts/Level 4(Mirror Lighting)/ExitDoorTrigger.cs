@@ -11,15 +11,21 @@ public class ExitDoorTrigger : MonoBehaviour
     [Header("Player")]
     public Transform playerRoot;
 
+    // The door starts locked.
     private bool unlocked = false;
+
+    // Prevent loading the scene more than once.
     private bool loading = false;
-    private bool sceneErrorLogged = false;
+
 
     private void Awake()
     {
+        // Player can enter the trigger zone.
         GetComponent<Collider>().isTrigger = true;
     }
 
+
+    // Called by LaserPuzzle when solved.
     public void Unlock()
     {
         if (unlocked)
@@ -27,77 +33,73 @@ public class ExitDoorTrigger : MonoBehaviour
 
         unlocked = true;
 
-        Debug.Log(
-            "[EXIT] Door unlocked! Player can enter."
-        );
+        Debug.Log("Exit door unlocked!");
     }
 
+
+    // Runs when something enters the trigger.
     private void OnTriggerEnter(Collider other)
     {
-        Debug.Log(
-            "[EXIT] Trigger touched by: " +
-            other.name
-        );
-
         TryLoadLevel(other);
     }
 
+
+    // Also checks players already in the trigger.
     private void OnTriggerStay(Collider other)
     {
         TryLoadLevel(other);
     }
 
+
+    // Check whether this object is the player.
     private bool IsPlayer(Collider other)
     {
-        // Match the Player assigned in Inspector.
         if (playerRoot != null)
         {
             return other.transform == playerRoot ||
                    other.transform.IsChildOf(playerRoot);
         }
 
-        // Fallback if Player Root is not assigned.
+        // Fallback when Player Root is not assigned.
         return other.CompareTag("Player") ||
                other.transform.root.CompareTag("Player") ||
                other.GetComponentInParent<CharacterController>()
                    != null;
     }
 
+
+    // Load the next level if door is unlocked.
     private void TryLoadLevel(Collider other)
     {
+        // Prevent repeated scene loading.
         if (loading)
             return;
 
+        // Only allow the player.
         if (!IsPlayer(other))
             return;
 
+        // Do not enter if puzzle is unsolved.
         if (!unlocked)
             return;
 
+        // Check if the next scene is in the build.
         if (!Application.CanStreamedLevelBeLoaded(
             nextSceneName))
         {
-            if (!sceneErrorLogged)
-            {
-                Debug.LogError(
-                    "[EXIT] Cannot load scene: " +
-                    nextSceneName +
-                    ". Add it to Build Profiles!"
-                );
-
-                sceneErrorLogged = true;
-            }
+            Debug.LogError(
+                "Scene not found: " + nextSceneName +
+                ". Add it to Build Profiles!"
+            );
 
             return;
         }
 
         loading = true;
 
-        Debug.Log(
-            "[EXIT] Player entered! Loading: " +
-            nextSceneName
-        );
+        Debug.Log("Loading " + nextSceneName);
 
+        // Change to the next scene.
         SceneManager.LoadScene(nextSceneName);
     }
 }
