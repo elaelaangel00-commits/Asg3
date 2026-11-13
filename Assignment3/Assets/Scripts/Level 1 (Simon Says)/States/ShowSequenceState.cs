@@ -1,17 +1,15 @@
 namespace Backrooms.Puzzles.Simon
 {
-    /// <summary>
-    /// Plays the sequence: lamp on -> wait -> lamp off -> wait gap -> next lamp.
-    /// Uses a timer instead of a coroutine, so pausing freezes it and leaving the state
-    /// cannot leave anything running in the background.
-    /// Shots are ignored here: input is locked by simply doing nothing in OnStationShot.
-    /// </summary>
+    // plays the sequence: lamp on -> wait -> lamp off -> wait gap -> next lamp.
+    // uses a timer instead of a coroutine, so pausing freezes it,
+    // and leaving the state can't leave anything running in the background.
+    // shots are ignored here: OnStationShot is empty, that's how input is "locked".
     public class ShowSequenceState : ISimonState
     {
         private readonly SimonPuzzle puzzle;
-        private int index;
-        private float timer;
-        private bool lampOn;
+        private int index;      // which step of the sequence we're showing
+        private float timer;    // counts down to the next change
+        private bool lampOn;    // is the current lamp lit right now?
 
         public ShowSequenceState(SimonPuzzle puzzle)
         {
@@ -22,7 +20,7 @@ namespace Backrooms.Puzzles.Simon
         {
             index = 0;
             lampOn = false;
-            timer = puzzle.Config.leadIn;
+            timer = puzzle.Config.leadIn;   // short pause before the first flash
 
             puzzle.SetAllLamps(false);
             puzzle.SetPrompt("WATCH", puzzle.Config.watchColour);
@@ -32,11 +30,11 @@ namespace Backrooms.Puzzles.Simon
         public void Tick(float deltaTime)
         {
             timer -= deltaTime;
-            if (timer > 0f) return;
+            if (timer > 0f) return;   // not time yet
 
             if (lampOn)
             {
-                // Current lamp has been on long enough: turn it off and wait the gap
+                // lamp has been on long enough: turn it off and wait the gap
                 puzzle.Station(puzzle.Sequence[index]).SetLit(false);
                 lampOn = false;
                 index++;
@@ -44,14 +42,14 @@ namespace Backrooms.Puzzles.Simon
             }
             else if (index < puzzle.Sequence.Count)
             {
-                // Gap is over: light the next lamp in the sequence
+                // gap is over: light the next lamp (with its note)
                 puzzle.Station(puzzle.Sequence[index]).Flash();
                 lampOn = true;
-                timer = puzzle.Config.FlashFor(puzzle.Round);
+                timer = puzzle.Config.FlashFor(puzzle.Round);   // faster in later rounds
             }
             else
             {
-                // Every lamp has been shown
+                // every lamp has been shown: player's turn
                 puzzle.ChangeState(new AwaitInputState(puzzle));
             }
         }

@@ -1,6 +1,6 @@
 namespace Backrooms.Puzzles.Simon
 {
-    /// <summary>Final state. All lamps on, success sound, and the puzzle reports itself solved.</summary>
+    // final state. all lamps on, success sound, and the puzzle tells everyone it's solved.
     public class SolvedState : ISimonState
     {
         private readonly SimonPuzzle puzzle;
@@ -17,9 +17,10 @@ namespace Backrooms.Puzzles.Simon
             puzzle.PlaySolved();
             puzzle.SetPrompt("ACCESS GRANTED", puzzle.Config.successColour);
             puzzle.SetInfo("THE DOOR IS OPEN");
-            puzzle.MarkSolved();
+            puzzle.MarkSolved();   // fires the Solved event -> exit door unlocks
         }
 
+        // nothing else happens after solving
         public void Tick(float deltaTime) { }
 
         public void OnStationShot(int stationId) { }

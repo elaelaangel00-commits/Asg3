@@ -3,36 +3,33 @@ using UnityEngine;
 
 namespace Backrooms.Core
 {
-    /// <summary>
-    /// Base class for every puzzle in the game.
-    /// A subclass only decides WHEN it is solved (CheckConditions).
-    /// Doors, the HUD and the PuzzleManager only listen to the Solved / Unsolved events,
-    /// so they never need to know how any individual puzzle works.
-    /// </summary>
+    // base class for every puzzle.
+    // a puzzle only decides WHEN it is solved (CheckConditions).
+    // doors and ui just listen to the Solved / Unsolved events,
+    // so they never need to know how the puzzle works.
     public abstract class Puzzle : MonoBehaviour
     {
         [SerializeField] private string puzzleName = "Puzzle";
 
+        // events other scripts can listen to
         public event Action<Puzzle> Solved;
         public event Action<Puzzle> Unsolved;
 
         public string PuzzleName => puzzleName;
-        public bool IsSolved { get; private set; }
+        public bool IsSolved { get; private set; }   // anyone can read it, only this class can change it
 
-        /// <summary>Return true when every condition of this puzzle is met.</summary>
+        // each puzzle writes its own rule for "am i solved?"
         protected abstract bool CheckConditions();
 
-        /// <summary>
-        /// Call this whenever the puzzle's state changes.
-        /// Events only fire when the solved state actually flips.
-        /// </summary>
+        // call this whenever the puzzle changes.
+        // the events only fire when solved actually flips (false -> true or true -> false).
         protected void Evaluate()
         {
             bool nowSolved = CheckConditions();
-            if (nowSolved == IsSolved) return;
+            if (nowSolved == IsSolved) return;   // nothing changed, do nothing
 
             IsSolved = nowSolved;
-            if (nowSolved) Solved?.Invoke(this);
+            if (nowSolved) Solved?.Invoke(this);   // ?. = only call if someone is listening
             else Unsolved?.Invoke(this);
         }
     }

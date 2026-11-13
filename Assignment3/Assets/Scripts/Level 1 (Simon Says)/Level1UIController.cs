@@ -1,9 +1,9 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-// Pause menu for Level 1 (same structure as Level2UIController, without the notes screen).
-// Esc pauses: freezes time, unlocks the cursor, hides the HUD and disables gameplay scripts.
-// Esc again (or the Resume button) restores everything exactly as it was.
+// pause menu for level 1 (same idea as Level2UIController, without the notes screen).
+// esc pauses: stops time, frees the mouse, hides the hud and turns off gameplay scripts.
+// esc again (or the resume button) puts everything back the way it was.
 public class Level1UIController : MonoBehaviour
 {
     [Header("Panels")]
@@ -11,7 +11,7 @@ public class Level1UIController : MonoBehaviour
     [SerializeField] private GameObject pausePanel;
 
     [Header("Gameplay Scripts to Disable while Paused")]
-    [SerializeField] private Behaviour[] gameplayScripts;
+    [SerializeField] private Behaviour[] gameplayScripts;   // e.g. shooting and movement
 
     [Header("Scene")]
     [SerializeField] private string startMenuScene = "StartMenuScene";
@@ -20,14 +20,15 @@ public class Level1UIController : MonoBehaviour
     [SerializeField] private AudioSource uiAudio;
     [SerializeField] private AudioClip menuOpenClip;
 
+    // static = other scripts can check Level1UIController.IsPaused
     public static bool IsPaused { get; private set; }
 
-    private bool[] previousEnabledStates;   // which scripts were enabled before pausing
+    private bool[] previousEnabledStates;   // remembers which scripts were on before pausing
     private float previousTimeScale = 1f;
 
     private void Start()
     {
-        // No UI audio source assigned: add a 2D one here so the pause sound always has something to play through
+        // no audio source given: add a 2d one so the pause sound can still play
         if (uiAudio == null)
         {
             uiAudio = gameObject.AddComponent<AudioSource>();
@@ -35,7 +36,7 @@ public class Level1UIController : MonoBehaviour
             uiAudio.spatialBlend = 0f;
         }
 
-        // Load the clip now so the first pause isn't silent (the clip is set not to preload)
+        // load the clip now so the first pause isn't silent (the clip is set not to preload)
         if (menuOpenClip != null) menuOpenClip.LoadAudioData();
 
         IsPaused = false;
@@ -48,6 +49,7 @@ public class Level1UIController : MonoBehaviour
     {
         if (!Input.GetKeyDown(KeyCode.Escape)) return;
 
+        // esc toggles between paused and playing
         if (IsPaused) ResumeGame();
         else OpenPause();
     }
@@ -56,6 +58,7 @@ public class Level1UIController : MonoBehaviour
     {
         if (IsPaused) return;
 
+        // remember the current state so resume can restore it exactly
         previousTimeScale = Time.timeScale;
         previousEnabledStates = new bool[gameplayScripts.Length];
 
@@ -63,17 +66,18 @@ public class Level1UIController : MonoBehaviour
         {
             if (gameplayScripts[i] == null) continue;
             previousEnabledStates[i] = gameplayScripts[i].enabled;
-            gameplayScripts[i].enabled = false;
+            gameplayScripts[i].enabled = false;   // turn the script off while paused
         }
 
         IsPaused = true;
-        Time.timeScale = 0f;
+        Time.timeScale = 0f;   // 0 = time stops (timers, physics, animations)
         SetCursor(true);
         ApplyPanels();
 
         if (uiAudio != null && menuOpenClip != null) uiAudio.PlayOneShot(menuOpenClip);
     }
 
+    // also called by the resume button
     public void ResumeGame()
     {
         if (!IsPaused) return;
@@ -81,6 +85,7 @@ public class Level1UIController : MonoBehaviour
         IsPaused = false;
         Time.timeScale = previousTimeScale;
 
+        // turn the scripts back on, but only the ones that were on before
         if (previousEnabledStates != null)
         {
             for (int i = 0; i < gameplayScripts.Length; i++)
@@ -93,26 +98,30 @@ public class Level1UIController : MonoBehaviour
         ApplyPanels();
     }
 
+    // called by the main menu button
     public void ReturnToStartMenu()
     {
         IsPaused = false;
-        Time.timeScale = 1f;
+        Time.timeScale = 1f;   // reset time, or the next scene would start frozen
         SetCursor(true);
         SceneManager.LoadSceneAsync(startMenuScene);
     }
 
+    // show the hud while playing, show the pause panel while paused
     private void ApplyPanels()
     {
         if (hud != null) hud.SetActive(!IsPaused);
         if (pausePanel != null) pausePanel.SetActive(IsPaused);
     }
 
+    // menu open = free visible mouse, playing = mouse locked to the centre
     private void SetCursor(bool menuOpen)
     {
         Cursor.lockState = menuOpen ? CursorLockMode.None : CursorLockMode.Locked;
         Cursor.visible = menuOpen;
     }
 
+    // safety: never leave the game frozen when this object is removed
     private void OnDestroy()
     {
         IsPaused = false;

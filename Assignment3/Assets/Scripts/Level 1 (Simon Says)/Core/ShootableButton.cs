@@ -3,10 +3,8 @@ using UnityEngine;
 
 namespace Backrooms.Core
 {
-    /// <summary>
-    /// A button the player shoots (used as the Simon Says START button).
-    /// Glows when it can be used, goes dark when locked.
-    /// </summary>
+    // a button the player shoots (the START button).
+    // glows green when it can be used, goes dark when locked.
     public class ShootableButton : MonoBehaviour, IShootable
     {
         [SerializeField] private Renderer buttonRenderer;
@@ -14,16 +12,17 @@ namespace Backrooms.Core
         [SerializeField] private Color lockedColour = new Color(0.15f, 0.15f, 0.15f);
         [SerializeField] private float emissionStrength = 2f;
 
-        public event Action Shot;
+        public event Action Shot;   // the puzzle listens to this
         public bool Interactable { get; private set; } = true;
 
+        // looking up a shader property by id is faster than by name every time
         private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
         private Material material;
 
         private void Awake()
         {
-            material = buttonRenderer.material;       // copy of the material for this button only
-            material.EnableKeyword("_EMISSION");
+            material = buttonRenderer.material;       // .material = a copy just for this button
+            material.EnableKeyword("_EMISSION");      // allow it to glow
             Apply();
         }
 
@@ -33,11 +32,13 @@ namespace Backrooms.Core
             Apply();
         }
 
+        // called by PlayerShooter when this button gets hit
         public void OnShot(RaycastHit hit)
         {
-            if (Interactable) Shot?.Invoke();
+            if (Interactable) Shot?.Invoke();   // only counts when unlocked
         }
 
+        // update the colour and glow to match the state
         private void Apply()
         {
             if (material == null) return;

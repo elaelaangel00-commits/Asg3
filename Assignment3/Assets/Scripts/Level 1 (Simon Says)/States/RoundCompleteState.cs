@@ -1,6 +1,6 @@
 namespace Backrooms.Puzzles.Simon
 {
-    /// <summary>Short pause between rounds. Makes the sequence one step longer.</summary>
+    // short pause between rounds. the sequence gets one step longer.
     public class RoundCompleteState : ISimonState
     {
         private readonly SimonPuzzle puzzle;
@@ -14,7 +14,7 @@ namespace Backrooms.Puzzles.Simon
         public void Enter()
         {
             puzzle.Round++;
-            puzzle.ExtendSequence();
+            puzzle.ExtendSequence();   // same sequence + 1 new step at the end
             puzzle.PlayRoundClear();
             timer = puzzle.Config.betweenRounds;
 
@@ -25,7 +25,7 @@ namespace Backrooms.Puzzles.Simon
         public void Tick(float deltaTime)
         {
             timer -= deltaTime;
-            if (timer <= 0f) puzzle.ChangeState(new ShowSequenceState(puzzle));
+            if (timer <= 0f) puzzle.ChangeState(new ShowSequenceState(puzzle));   // show the longer sequence
         }
 
         public void OnStationShot(int stationId) { }

@@ -5,11 +5,10 @@ using UnityEngine.SceneManagement;
 
 namespace Backrooms.Core
 {
-    /// <summary>
-    /// Level exit door. Once its puzzle is solved, the player can look at the door
-    /// within range and press E to load the next scene.
-    /// Works with any puzzle that inherits from Puzzle.
-    /// </summary>
+    // the level exit door.
+    // once the puzzle is solved, the player looks at the door (within range)
+    // and presses E to load the next level.
+    // works with any puzzle that inherits from Puzzle.
     public class PuzzleExitDoor : MonoBehaviour
     {
         [Header("References")]
@@ -18,8 +17,8 @@ namespace Backrooms.Core
 
         [Header("Interaction")]
         [SerializeField] private KeyCode interactKey = KeyCode.E;
-        [SerializeField, Min(0f)] private float interactRange = 3f;
-        [SerializeField, Min(0f)] private float loadDelay = 0.5f;
+        [SerializeField, Min(0f)] private float interactRange = 3f;   // must be this close to use the door
+        [SerializeField, Min(0f)] private float loadDelay = 0.5f;     // small wait so the door sound can play
 
         [Header("Prompt")]
         [SerializeField] private TMP_Text promptText;                // left empty = created automatically on the HUD canvas
@@ -33,8 +32,9 @@ namespace Backrooms.Core
         [Header("Audio")]
         [SerializeField] private AudioSource doorOpenAudio;
 
-        private bool hasStartedLoading;
+        private bool hasStartedLoading;   // stops the level loading twice
 
+        // the door can only be used when the puzzle is solved and we're not already leaving
         public bool CanInteract => puzzle != null && puzzle.IsSolved && !hasStartedLoading;
 
         private void Start()
@@ -52,15 +52,17 @@ namespace Backrooms.Core
                 return;
             }
 
+            // show the right message only while the player is looking at the door
             bool lookingAtDoor = IsPlayerLookingAtDoor();
             string message = CanInteract ? openMessage : lockedMessage;
             ShowPrompt(lookingAtDoor && !string.IsNullOrEmpty(message), message);
 
+            // all 3 must be true: looking at it, puzzle solved, E pressed
             if (lookingAtDoor && CanInteract && Input.GetKeyDown(interactKey))
                 StartCoroutine(LoadNextLevel());
         }
 
-        // Raycast from the centre of the screen (the crosshair), limited to interactRange
+        // raycast from the crosshair, only as far as interactRange
         private bool IsPlayerLookingAtDoor()
         {
             if (playerCamera == null) return false;
@@ -72,15 +74,16 @@ namespace Backrooms.Core
             return ContainsCollider(hit.collider);
         }
 
-        // True if the collider is the door or one of its children
+        // true if the collider is the door itself or one of its children (frame, handle...)
         public bool ContainsCollider(Collider collider)
         {
             return collider.transform == transform || collider.transform.IsChildOf(transform);
         }
 
-        // Builds a centred prompt just below the crosshair on the first screen-space canvas
+        // makes a text prompt just under the crosshair if none was assigned
         private TMP_Text CreatePrompt()
         {
+            // find the screen ui canvas (not a world-space one)
             Canvas hudCanvas = null;
             foreach (Canvas canvas in FindObjectsByType<Canvas>(FindObjectsSortMode.None))
             {
@@ -100,6 +103,7 @@ namespace Backrooms.Core
             GameObject promptObject = new GameObject("ExitPrompt (auto)", typeof(RectTransform));
             promptObject.transform.SetParent(hudCanvas.transform, false);
 
+            // centre of the screen, 80 pixels down
             RectTransform rect = (RectTransform)promptObject.transform;
             rect.anchorMin = new Vector2(0.5f, 0.5f);
             rect.anchorMax = new Vector2(0.5f, 0.5f);
@@ -111,7 +115,7 @@ namespace Backrooms.Core
             text.alignment = TextAlignmentOptions.Center;
             text.fontSize = 32;
             text.color = Color.white;
-            text.raycastTarget = false;
+            text.raycastTarget = false;   // so the text never blocks mouse clicks
             return text;
         }
 
@@ -122,6 +126,7 @@ namespace Backrooms.Core
             if (visible) promptText.text = message;
         }
 
+        // coroutine: play the sound, wait a bit, then load the next level
         private IEnumerator LoadNextLevel()
         {
             hasStartedLoading = true;

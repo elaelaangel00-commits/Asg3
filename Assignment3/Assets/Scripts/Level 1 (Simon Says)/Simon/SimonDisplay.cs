@@ -3,14 +3,12 @@ using UnityEngine;
 
 namespace Backrooms.Puzzles.Simon
 {
-    /// <summary>
-    /// The text screen on the wall above the lamps ("WATCH", "YOUR TURN", round and timer).
-    /// It is in the world, not on the HUD, so it does not clash with the team's HUD.
-    /// </summary>
+    // the text screen on the wall above the lamps ("WATCH", "YOUR TURN", round and timer).
+    // it's in the world, not on the hud, so it doesn't clash with the team's ui.
     public class SimonDisplay : MonoBehaviour
     {
-        [SerializeField] private TMP_Text promptText;
-        [SerializeField] private TMP_Text infoText;
+        [SerializeField] private TMP_Text promptText;   // big text: what to do
+        [SerializeField] private TMP_Text infoText;     // small text: round, progress, timer
 
         public void SetPrompt(string message, Color colour)
         {
