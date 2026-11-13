@@ -43,3 +43,13 @@ https://assetstore.unity.com/packages/3d/props/feline-gargoyle-27106
 
 Locker by VIS Games, Unity Asset Store
 https://assetstore.unity.com/packages/3d/props/locker-56405
+
+Level Room 4 SFX
+Button Press
+https://pixabay.com/sound-effects/search/press%20button/
+
+Correct Sfx
+https://pixabay.com/sound-effects/search/correct%20sound%20effect/?pagi=3
+
+Horror Ambiance
+https://pixabay.com/sound-effects/search/horror%20ambiance/
