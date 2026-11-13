@@ -20,5 +20,4 @@ Wires can’t cross each other.
 Press buttons to flip or rotate objects/Mirrors to reflect light at the correct direction to unlock the next room.
 
 [DAYA] 5th room - Room with weeping angels (seen check, raycasting and viewports)
-A number of weeping angels guarding a box with key.
-Lure all the weeping angels into each holding cell.
+3 weeping angels guarding a table near the gate. Collect all the skulls and place it on the table near the gate to unlock the level.
